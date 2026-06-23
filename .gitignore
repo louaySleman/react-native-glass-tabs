@@ -1,0 +1,34 @@
+# OSX
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+.yarn/
+
+# Build
+lib/
+dist/
+
+# Android
+android/build/
+android/.gradle/
+android/local.properties
+android/generated/
+
+# iOS
+ios/build/
+ios/Pods/
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Coverage
+coverage/
+
+# Generated
+*.tsbuildinfo
