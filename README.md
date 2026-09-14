@@ -38,8 +38,8 @@
 
 - **iOS 26+**: Native liquid glass with SF Symbols and search role via SwiftUI TabView
 - **iOS 18 and below**: Standard native UITabBarController
-- **Android API 31+**: GPU-accelerated frosted glass floating pill (Telegram-style)
-- **Android API < 31**: Semi-transparent floating pill with elevation shadow
+- **Android 13+ (API 33+)**: GPU-accelerated frosted glass floating pill (Telegram-style)
+- **Android 12 and below**: Semi-transparent floating pill with elevation shadow
 - **Single API**: One component, adaptive rendering per platform/version
 - **New Architecture ready**: Fabric & TurboModules supported
 - **React Navigation 7+**: Drop-in compatible with `@react-navigation/bottom-tabs`
@@ -194,7 +194,7 @@ const createNativeIcon = (filled: string, outline: string) => {
 | `floatingMargin` | `number` | `8` | Android floating margin (dp) |
 | `hapticFeedback` | `boolean` | `true` | iOS haptic feedback on tap |
 | `labeled` | `boolean` | `true` | Show text labels |
-| `blurRadius` | `number` | `25` | Android blur radius (px, API 31+) |
+| `blurRadius` | `number` | `25` | Android blur radius (px, Android 13+; ignored below) |
 | `initialRouteName` | `string` | first tab | Initial active tab |
 | `translucent` | `boolean` | `true` | iOS liquid glass translucent |
 | `colorScheme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Force light/dark mode or follow system |
@@ -401,7 +401,7 @@ Uses `@bottom-tabs/react-navigation` which wraps SwiftUI's `TabView` with native
 Uses `@react-navigation/bottom-tabs` with standard `UITabBarController` styling. Your `render` function is used for all icons. Headers use the built-in bottom-tabs header system. Dark mode adapts tab bar background, borders, and header text colors automatically.
 
 ### Android — Floating (`floating={true}`, default)
-A custom native Kotlin module applies `RenderEffect.createBlurEffect()` to the tab bar background (API 31+), creating a GPU-accelerated frosted glass effect behind a floating pill-shaped bar. Falls back to semi-transparent solid background with elevation shadow on API < 31. Each tab is wrapped in a `@react-navigation/native-stack` for consistent headers across all modes.
+A custom native Kotlin module applies `RenderEffect.createBlurEffect()` to the tab bar background (Android 13+), creating a GPU-accelerated frosted glass effect behind a floating pill-shaped bar. Falls back to a semi-transparent solid background with elevation shadow on Android 12 and below, where `android.graphics.RenderEffect` is either absent or not used. Each tab is wrapped in a `@react-navigation/native-stack` for consistent headers across all modes.
 
 ### Android — Standard (`floating={false}`)
 Uses `@bottom-tabs/react-navigation` which wraps the native Material 3 `BottomNavigationView`. Icons are provided via `nativeIcon` with `filled` and `outline` image sources. Each tab is wrapped in a `@react-navigation/native-stack` for headers identical to floating mode. Falls back to `@react-navigation/bottom-tabs` if `@bottom-tabs/react-navigation` is not installed.
