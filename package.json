@@ -1,6 +1,6 @@
 {
   "name": "react-native-glass-tabs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "React Native bottom tab navigator with liquid glass effect (iOS 26+), GPU-blurred frosted glass floating pill (Android), and Material 3 native tabs. Drop-in replacement for @react-navigation/bottom-tabs with glassmorphism, SF Symbols, badges, dark mode, and adaptive fallbacks. Single <GlassTabs> component for all platforms.",
   "main": "src/index",
   "types": "lib/typescript/index.d.ts",
