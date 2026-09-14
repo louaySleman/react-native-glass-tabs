@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.*
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
@@ -16,11 +17,15 @@ import eightbitlab.com.blurview.RenderEffectBlur
  * Native frosted glass bar using Dimezis/BlurView.
  *
  * BlurView hooks into Android's actual drawing pipeline — it uses hardware-
- * accelerated view snapshotting with near-zero overhead. On API 31+ it uses
- * the system RenderThread for blur. This is the same library used by
- * @react-native-community/blur under the hood.
+ * accelerated view snapshotting with near-zero overhead, blurring on the system
+ * RenderThread. This is the same library used by @react-native-community/blur
+ * under the hood.
  *
  * We embed it directly so users don't need to install any blur package.
+ *
+ * The blur requires android.graphics.RenderEffect and is therefore gated to
+ * Android 13+ (see [BLUR_MIN_SDK]). Below that the bar still draws — flat and
+ * translucent, no blur — rather than crashing on the missing platform class.
  */
 class GlassBarView(context: Context) : FrameLayout(context) {
 
@@ -79,8 +84,22 @@ class GlassBarView(context: Context) : FrameLayout(context) {
   }
 
   private fun setupBlur(blurRadius: Float) {
-    val activity = getActivity() ?: return
-    val decorView = activity.window?.decorView as? ViewGroup ?: return
+    // BlurView's RenderEffectBlur resolves android.graphics.RenderEffect, which
+    // only exists from API 31. On an older device that reference throws
+    // NoClassDefFoundError from inside setupWith(), taking down every launch on
+    // Android 11 and below. Under the cutoff there is no blur at all: the bar
+    // degrades to a flat translucent slab.
+    if (Build.VERSION.SDK_INT < BLUR_MIN_SDK) {
+      applyFlatBackground()
+      return
+    }
+
+    val activity = getActivity()
+    val decorView = activity?.window?.decorView as? ViewGroup
+    if (activity == null || decorView == null) {
+      applyFlatBackground()
+      return
+    }
 
     // Get the window background for the clear drawable
     val windowBackground: Drawable = activity.window.decorView.background
@@ -93,14 +112,22 @@ class GlassBarView(context: Context) : FrameLayout(context) {
         .setBlurAutoUpdate(true)
 
       isSetup = true
-    } catch (e: Exception) {
-      // Fallback: solid semi-transparent background
-      val r = Color.red(bgColor)
-      val g = Color.green(bgColor)
-      val b = Color.blue(bgColor)
-      val alpha = (bgOpacity * 255).toInt().coerceIn(0, 255)
-      blurView.setBackgroundColor(Color.argb(alpha, r, g, b))
+    } catch (t: Throwable) {
+      // Throwable, not Exception: a missing platform class arrives as
+      // NoClassDefFoundError, which extends Error. Catching Exception left this
+      // fallback unreachable for the one failure it exists to absorb.
+      applyFlatBackground()
     }
+  }
+
+  /** No-blur bar: solid semi-transparent fill, matching the tint overlay. */
+  private fun applyFlatBackground() {
+    isSetup = false
+    val r = Color.red(bgColor)
+    val g = Color.green(bgColor)
+    val b = Color.blue(bgColor)
+    val alpha = (bgOpacity * 255).toInt().coerceIn(0, 255)
+    blurView.setBackgroundColor(Color.argb(alpha, r, g, b))
   }
 
   private fun getActivity(): Activity? {
@@ -110,5 +137,14 @@ class GlassBarView(context: Context) : FrameLayout(context) {
       ctx = ctx.baseContext
     }
     return null
+  }
+
+  companion object {
+    /**
+     * Lowest API level that gets the real blur. RenderEffect itself landed in
+     * API 31, so 31 and 32 would also work — this sits at 33 deliberately:
+     * Android 12 and below render flat, Android 13+ render blurred.
+     */
+    private const val BLUR_MIN_SDK = Build.VERSION_CODES.TIRAMISU
   }
 }
