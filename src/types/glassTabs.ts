@@ -191,7 +191,14 @@ export interface TabConfig {
   component: React.ComponentType<any>;
   title: string;
   renderIcon: ((props: IconRenderProps) => React.ReactNode) | PlatformIcons;
-  role?: 'search';
+  /**
+   * iOS liquid glass tab role.
+   * - `'search'`: the search tab. On iOS 26 it sits apart as a round button at the end of the bar;
+   *   on iOS 27 it stays inside the bar.
+   * - `'prominent'`: iOS 27+ (react-native-bottom-tabs 1.5+): the tab sits apart as a round button
+   *   at the end of the bar. Ignored on older iOS.
+   */
+  role?: 'search' | 'prominent';
   badge?: number | string;
   /**
    * Header configuration.
