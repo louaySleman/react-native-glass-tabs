@@ -102,6 +102,7 @@ const App = () => {
         floating={config.floating}
         labeled={config.labeled}
         hapticFeedback={config.hapticFeedback}
+        blurRadius={config.blur ? 25 : 0}
         colorScheme={isDark ? 'dark' : 'light'}
       />
     </NavigationContainer>

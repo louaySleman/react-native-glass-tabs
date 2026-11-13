@@ -18,6 +18,7 @@ export interface AppConfig {
   floating: boolean;
   labeled: boolean;
   hapticFeedback: boolean;
+  blur: boolean;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -25,6 +26,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   floating: true,
   labeled: true,
   hapticFeedback: true,
+  blur: true,
 };
 
 // ─── Sub-components ───
@@ -114,6 +116,7 @@ const ConfigScreen: React.FC<{
         <ToggleRow label="Floating" value={config.floating} onToggle={v => onUpdate({ floating: v })} badge="Android" />
         <ToggleRow label="Labeled" value={config.labeled} onToggle={v => onUpdate({ labeled: v })} />
         <ToggleRow label="Haptic Feedback" value={config.hapticFeedback} onToggle={v => onUpdate({ hapticFeedback: v })} badge="iOS" />
+        <ToggleRow label="Blur" value={config.blur} onToggle={v => onUpdate({ blur: v })} badge="Android" />
       </View>
 
       <View style={s.infoBox}>

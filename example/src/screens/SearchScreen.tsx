@@ -9,7 +9,7 @@ const SearchScreen = () => {
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       contentContainerStyle={sharedStyles.content}
       contentInsetAdjustmentBehavior="automatic">
-      {Array.from({ length: 10 }).map((_, i) => (
+      {Array.from({ length: 80 }).map((_, i) => (
         <View
           key={i}
           style={[sharedStyles.bigCard, { backgroundColor: CARD_COLORS[(i + 3) % CARD_COLORS.length], height: 100 }]}>
