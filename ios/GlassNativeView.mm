@@ -65,12 +65,15 @@
 
   UIVisualEffect *visual = nil;
   BOOL liquid = [effect isEqualToString:@"liquid"];
+#if defined(__IPHONE_26_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_26_0
+  // Built with the iOS 26+ SDK (Xcode 26+): Apple's liquid glass when running on iOS 26+.
   if (liquid) {
     if (@available(iOS 26.0, *)) {
       UIGlassEffect *glass = [UIGlassEffect effectWithStyle:UIGlassEffectStyleRegular];
       visual = glass;
     }
   }
+#endif
   if (visual == nil) {
     UIBlurEffectStyle style = blur <= 8 ? UIBlurEffectStyleSystemUltraThinMaterial
       : blur <= 16 ? UIBlurEffectStyleSystemThinMaterial
