@@ -20,6 +20,7 @@ internal object GlassConfig {
     val liquid = config.hasKey("effect") && config.getString("effect") == "liquid"
     val adaptiveIcons = bool("adaptiveIcons", true)
     val adaptiveContent = bool("adaptiveContent", defaultAdaptiveContent)
+    val segments = num("segments", 0f).toInt()
     // JS sends a percentage (0–100).
     val backgroundOpacity = if (config.hasKey("backgroundOpacity") && !config.isNull("backgroundOpacity")) {
       config.getDouble("backgroundOpacity").toFloat() / 100f
@@ -33,15 +34,15 @@ internal object GlassConfig {
     }
 
     view.post {
-      view.configure(cornerRadius, bgColor, opacity, blurRadius, darkMode, liquid, adaptiveIcons, backgroundOpacity, adaptiveContent)
+      view.configure(cornerRadius, bgColor, opacity, blurRadius, darkMode, liquid, adaptiveIcons, backgroundOpacity, adaptiveContent, segments)
     }
   }
 
   /** Forwards "what shows through turned dark / light" to JS as `onBackdropChange`. */
   fun dispatchBackdropEvents(context: ThemedReactContext, view: GlassBarView) {
-    view.onBackdropDarkChange = { dark ->
+    view.onBackdropDarkChange = { dark, segments ->
       UIManagerHelper.getEventDispatcherForReactTag(context, view.id)
-        ?.dispatchEvent(BackdropChangeEvent(UIManagerHelper.getSurfaceId(view), view.id, dark))
+        ?.dispatchEvent(BackdropChangeEvent(UIManagerHelper.getSurfaceId(view), view.id, dark, segments))
     }
   }
 

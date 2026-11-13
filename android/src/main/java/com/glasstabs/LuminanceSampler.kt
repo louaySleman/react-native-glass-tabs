@@ -22,7 +22,7 @@ import androidx.annotation.RequiresApi
 @RequiresApi(GlassBarView.BLUR_MIN_SDK)
 internal object LuminanceSampler {
 
-  private class Request(val record: (RecordingCanvas) -> Boolean, val done: (Double?) -> Unit)
+  private class Request(val record: (RecordingCanvas) -> Boolean, val done: (DoubleArray?) -> Unit)
 
   private val main = Handler(Looper.getMainLooper())
   private val worker by lazy { Handler(HandlerThread("GlassLuminance").also { it.start() }.looper) }
@@ -34,7 +34,8 @@ internal object LuminanceSampler {
   private var current: Request? = null
   private var generation = 0
 
-  fun request(record: (RecordingCanvas) -> Boolean, done: (Double?) -> Unit) {
+  /** [done] gets the brightness (0–1) of each of the 24 columns, left to right, or null. */
+  fun request(record: (RecordingCanvas) -> Boolean, done: (DoubleArray?) -> Unit) {
     if (broken) return done(null)
     queue.addLast(Request(record, done))
     pump()
@@ -94,16 +95,17 @@ internal object LuminanceSampler {
       r.acquireLatestImage()?.use { image ->
         val plane = image.planes[0]
         val buf = plane.buffer
-        var sum = 0.0
+        val cols = DoubleArray(GlassBarView.LUM_W)
         for (y in 0 until GlassBarView.LUM_H) {
           for (x in 0 until GlassBarView.LUM_W) {
             val i = y * plane.rowStride + x * plane.pixelStride
-            sum += 0.2126 * (buf.get(i).toInt() and 0xFF) +
+            cols[x] += 0.2126 * (buf.get(i).toInt() and 0xFF) +
               0.7152 * (buf.get(i + 1).toInt() and 0xFF) +
               0.0722 * (buf.get(i + 2).toInt() and 0xFF)
           }
         }
-        sum / (255.0 * GlassBarView.LUM_W * GlassBarView.LUM_H)
+        for (x in cols.indices) cols[x] /= 255.0 * GlassBarView.LUM_H
+        cols
       }
     } catch (e: Throwable) {
       null
@@ -111,7 +113,7 @@ internal object LuminanceSampler {
     main.post { finish(avg) }
   }
 
-  private fun finish(avg: Double?) {
+  private fun finish(avg: DoubleArray?) {
     val req = current ?: return
     current = null
     generation++

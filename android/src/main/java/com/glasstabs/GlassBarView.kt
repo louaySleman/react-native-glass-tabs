@@ -68,8 +68,20 @@ class GlassBarView(context: Context) : FrameLayout(context), ViewTreeObserver.On
   private val rimRect = RectF()
   private val visibleRect = android.graphics.Rect()
   private var lastCaptureAt = 0L
+  private var lastPreDrawAt = 0L
+  private fun activity(): android.app.Activity? {
+    var c: Context? = context
+    while (c is android.content.ContextWrapper) {
+      if (c is android.app.Activity) return c
+      (c as? com.facebook.react.bridge.ReactContext)?.currentActivity?.let { return it }
+      c = c.baseContext
+    }
+    return null
+  }
+
   private val deferredCapture = Runnable {
     lastCaptureAt = 0L
+    lastPreDrawAt = 0L
     invalidate() // asks for one more frame; its pre-draw captures the settled backdrop
   }
 
@@ -77,8 +89,12 @@ class GlassBarView(context: Context) : FrameLayout(context), ViewTreeObserver.On
    * Called (on the main thread) when what shows through the bar turns dark or light, so the
    * icons can switch between dark and light. Only fires when it changes.
    */
-  var onBackdropDarkChange: ((Boolean) -> Unit)? = null
+  var onBackdropDarkChange: ((Boolean, BooleanArray) -> Unit)? = null
   private var backdropDark: Boolean? = null
+
+  /** Tab bar: measure each tab's part of the bar separately (equal slices, left to right). */
+  private var segments = 0
+  private var segmentDark = BooleanArray(0)
   private var adaptive = true
 
   /** Recolour text and icons inside (standalone glass views) to stay readable. */
@@ -112,7 +128,10 @@ class GlassBarView(context: Context) : FrameLayout(context), ViewTreeObserver.On
     adaptiveIcons: Boolean = true,
     backgroundOpacity: Float? = null,
     adaptiveContent: Boolean = false,
+    segments: Int = 0,
   ) {
+    this.segments = segments.coerceIn(0, LUM_W)
+    segmentDark = BooleanArray(0)
     adaptive = adaptiveIcons || adaptiveContent
     this.backgroundOpacity = backgroundOpacity?.coerceIn(0f, 1f)
     if (this.adaptiveContent != adaptiveContent) {
@@ -168,10 +187,12 @@ class GlassBarView(context: Context) : FrameLayout(context), ViewTreeObserver.On
 
   override fun onAttachedToWindow() {
     super.onAttachedToWindow()
+    QualityGovernor.attach(activity())
     if (backdrop != null) startObserving()
   }
 
   override fun onDetachedFromWindow() {
+    QualityGovernor.detach()
     removeCallbacks(deferredCapture)
     stopObserving()
     contentAnim?.cancel()
@@ -209,12 +230,21 @@ class GlassBarView(context: Context) : FrameLayout(context), ViewTreeObserver.On
           return true
         }
         // While things move every frame (scrolling, animations), refresh the backdrop at most
-        // ~30 times a second: under a blur the difference can't be seen, and the GPU re-blurs
-        // half as often. A last refresh always follows once the motion stops.
+        // ~30 times a second (less when the phone is dropping frames, or not at all while
+        // moving on a struggling phone / in battery saver — see QualityGovernor). Under a blur
+        // the difference can't be seen. A last refresh always follows once the motion stops.
         val now = SystemClock.uptimeMillis()
-        if (now - lastCaptureAt < CAPTURE_INTERVAL_MS) {
+        val interval = when (QualityGovernor.level) {
+          QualityGovernor.FULL -> CAPTURE_INTERVAL_MS
+          QualityGovernor.REDUCED -> CAPTURE_INTERVAL_MS * 2
+          else -> Long.MAX_VALUE
+        }
+        val moving = now - lastPreDrawAt < MOTION_GAP_MS
+        lastPreDrawAt = now
+        val skip = if (interval == Long.MAX_VALUE) moving && lastCaptureAt > 0 else now - lastCaptureAt < interval
+        if (skip) {
           removeCallbacks(deferredCapture)
-          postDelayed(deferredCapture, CAPTURE_INTERVAL_MS)
+          postDelayed(deferredCapture, if (interval == Long.MAX_VALUE) SETTLE_MS else CAPTURE_INTERVAL_MS)
           return true
         }
         lastCaptureAt = now
@@ -407,29 +437,45 @@ class GlassBarView(context: Context) : FrameLayout(context), ViewTreeObserver.On
           drawBehind(c, root)
           true
         },
-        done = { avg ->
+        done = { cols ->
           queued = false
-          if (avg != null) onLuminance(avg)
+          if (cols != null) onLuminance(cols)
         },
       )
     }
 
-    private fun onLuminance(avg: Double) {
+    private fun onLuminance(cols: DoubleArray) {
       // What the eye sees is the backdrop under the tint: blend the two.
       val tintA = Color.alpha(tintPaint.color) / 255.0
       val tintL = (0.2126 * Color.red(bgColor) + 0.7152 * Color.green(bgColor) + 0.0722 * Color.blue(bgColor)) / 255.0
-      val seen = avg * (1 - tintA) + tintL * tintA
-      val was = backdropDark
-      // Hysteresis, so it doesn't flicker on mid-grey content.
-      val dark = when (was) {
-        true -> seen < 0.62
-        false -> seen < 0.55
-        null -> seen < 0.58
+      fun seen(from: Int, to: Int): Double {
+        var sum = 0.0
+        for (x in from until to) sum += cols[x]
+        return (sum / (to - from)) * (1 - tintA) + tintL * tintA
       }
-      if (dark != was) {
+      // Hysteresis, so it doesn't flicker on mid-grey content.
+      fun darkness(was: Boolean?, v: Double) = when (was) {
+        true -> v < 0.62
+        false -> v < 0.55
+        null -> v < 0.58
+      }
+      val was = backdropDark
+      val dark = darkness(was, seen(0, cols.size))
+      var changed = dark != was
+      if (segments > 0) {
+        val prev = segmentDark
+        val next = BooleanArray(segments) { k ->
+          val from = k * cols.size / segments
+          val to = maxOf(from + 1, (k + 1) * cols.size / segments)
+          darkness(prev.getOrNull(k), seen(from, to))
+        }
+        if (!next.contentEquals(prev)) changed = true
+        segmentDark = next
+      }
+      if (changed) {
+        if (dark != was) onBackdrop(dark)
         backdropDark = dark
-        onBackdrop(dark)
-        onBackdropDarkChange?.invoke(dark)
+        onBackdropDarkChange?.invoke(dark, segmentDark)
       }
     }
 
@@ -525,6 +571,12 @@ class GlassBarView(context: Context) : FrameLayout(context), ViewTreeObserver.On
 
     private const val CONTENT_DARK = 0xFF1C1C1E.toInt()
     private const val CAPTURE_INTERVAL_MS = 32L
+
+    /** Frames closer than this mean "still moving". */
+    private const val MOTION_GAP_MS = 50L
+
+    /** STILL level: refresh this long after the motion stops. */
+    private const val SETTLE_MS = 120L
 
     private const val CONTENT_FADE_MS = 280L
     internal const val LUM_W = 24
