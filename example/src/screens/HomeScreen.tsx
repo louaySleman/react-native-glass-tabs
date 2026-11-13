@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -47,6 +48,11 @@ const HomeScreen = () => {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const cardW = width - 32;
+  // Android fades glass content between dark and light by itself. iOS doesn't, so pick it here:
+  // the frosted chip follows the theme, the liquid chips sit over the darker bottom of the photo.
+  const ios = Platform.OS === 'ios';
+  const chipInk = ios ? theme.colors.text : DARK_INK;
+  const photoInk = ios ? '#FFFFFF' : DARK_INK;
   return (
     <ScrollView
       style={{ backgroundColor: theme.colors.background }}
@@ -69,29 +75,31 @@ const HomeScreen = () => {
               style={StyleSheet.absoluteFill}
             />
             <View style={s.shade} />
-            {/* Glass chips: their dark text turns white by itself over dark photos. */}
+            {/* Glass chips: on Android their dark text turns white by itself over dark photos. */}
             <View style={s.cardTop}>
               <BlurView style={s.authorChip}>
                 <Image
                   source={{ uri: unsplash(author.id, 96) }}
                   style={s.avatar}
                 />
-                <Text style={s.author}>{author.name}</Text>
+                <Text style={[s.author, { color: chipInk }]}>
+                  {author.name}
+                </Text>
               </BlurView>
             </View>
             <View style={s.cardBottom}>
               <View style={{ flex: 1 }}>
                 <Text style={s.cardTitle}>{p.title}</Text>
                 <LiquidGlassView style={s.placeChip}>
-                  <Ionicons name="location-sharp" size={14} color="#1C1C1E" />
-                  <Text style={s.place}>{p.place}</Text>
+                  <Ionicons name="location-sharp" size={14} color={photoInk} />
+                  <Text style={[s.place, { color: photoInk }]}>{p.place}</Text>
                 </LiquidGlassView>
               </View>
               <LiquidGlassView style={s.like}>
                 <Ionicons
                   name={i % 3 === 0 ? 'heart' : 'heart-outline'}
                   size={20}
-                  color="#1C1C1E"
+                  color={photoInk}
                 />
               </LiquidGlassView>
             </View>
@@ -101,6 +109,8 @@ const HomeScreen = () => {
     </ScrollView>
   );
 };
+
+const DARK_INK = '#1C1C1E';
 
 const s = StyleSheet.create({
   content: { paddingHorizontal: 16, paddingBottom: 130 },
