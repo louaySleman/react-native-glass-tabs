@@ -28,8 +28,9 @@ export interface GlassViewProps extends ViewProps {
    */
   backgroundOpacity?: number;
   /**
-   * Text and icons inside fade to white over dark content (or to near-black over light
-   * content in dark mode) by themselves, natively. Default true.
+   * Android: text and icons inside fade to white over dark content (or to near-black over
+   * light content in dark mode) by themselves, natively. Default true. (On iOS the system
+   * material handles legibility.)
    */
   adaptiveContent?: boolean;
   /** Force light/dark or follow the system. Default 'auto'. */
@@ -54,7 +55,7 @@ type NativeProps = ViewProps & {
 };
 
 const GlassNativeView =
-  Platform.OS === 'android'
+  Platform.OS === 'android' || Platform.OS === 'ios'
     ? requireNativeComponent<NativeProps>('GlassNativeView')
     : null;
 
@@ -65,8 +66,9 @@ const DEFAULT_OPACITY = { blur: 47, liquid: 19 };
  * (`effect="liquid"` adds iOS 26-style edge refraction and a light rim). Only what's behind it
  * is captured, and only on frames the app draws anyway, so it costs very little.
  *
- * Android 12+ (liquid glass 13+). Elsewhere (iOS, older Android) it renders a translucent
- * tinted view with the same shape, so layouts look right everywhere.
+ * Android: live blur 12+, liquid glass 13+ (older: a translucent tinted view of the same shape).
+ * iOS: the system's own materials — liquid glass (UIGlassEffect) on iOS 26+, frosted blur
+ * before that and for `effect="blur"`; they adapt to light / dark by themselves.
  */
 export const GlassView: React.FC<GlassViewProps> = ({
   effect = 'blur',
@@ -111,22 +113,37 @@ export const GlassView: React.FC<GlassViewProps> = ({
       </View>
     );
   }
+  const glassConfig = {
+    cornerRadius: radius,
+    blurRadius,
+    effect,
+    backgroundColor: tint,
+    backgroundOpacity: pct,
+    // Without live blur (Android 11 and below) the flat tint uses this opacity.
+    opacity: Math.min(0.94, pct / 100 + 0.5),
+    adaptiveIcons: false,
+    adaptiveContent,
+    darkMode: dark,
+  };
+  if (Platform.OS === 'ios') {
+    // iOS: React Native lays the children out as usual; the system glass sits behind them.
+    return (
+      <View {...rest} style={[styles.clip, style]}>
+        <GlassNativeView
+          pointerEvents="none"
+          style={StyleSheet.absoluteFill}
+          glassConfig={glassConfig}
+        />
+        {children}
+      </View>
+    );
+  }
+  // Android: the children live inside the glass view, which recolours text and icons natively.
   return (
     <GlassNativeView
       {...rest}
       style={[styles.clip, style]}
-      glassConfig={{
-        cornerRadius: radius,
-        blurRadius,
-        effect,
-        backgroundColor: tint,
-        backgroundOpacity: pct,
-        // Without live blur (Android 11 and below) the flat tint uses this opacity.
-        opacity: Math.min(0.94, pct / 100 + 0.5),
-        adaptiveIcons: false,
-        adaptiveContent,
-        darkMode: dark,
-      }}
+      glassConfig={glassConfig}
       onBackdropChange={handleBackdrop}
     >
       {children}
