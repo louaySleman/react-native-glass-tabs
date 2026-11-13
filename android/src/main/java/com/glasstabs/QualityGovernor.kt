@@ -47,9 +47,9 @@ internal object QualityGovernor {
 
   private val listener = Window.OnFrameMetricsAvailableListener { _, metrics, _ ->
     val total = metrics.getMetric(FrameMetrics.TOTAL_DURATION)
-    // A frame that took over ~1.5 refresh intervals (25 ms at 60 Hz) was felt as a stutter.
-    val budget = frameBudgetNs
-    if (total > budget * 3 / 2) slow++
+    // A frame that took over ~1.5 refresh intervals was felt as a stutter — but never count
+    // less than 25 ms: on 90/120 Hz screens, dropping to 60 fps for a moment isn't a lag.
+    if (total > maxOf(frameBudgetNs * 3 / 2, MIN_SLOW_NS)) slow++
     seen++
     if (seen >= WINDOW) {
       val ratio = slow.toFloat() / seen
@@ -67,12 +67,18 @@ internal object QualityGovernor {
         }
         else -> smoothStreak = 0
       }
+      if (frameLevel != lastLogged) {
+        android.util.Log.i("GlassTabs", "glass refresh level: ${listOf("full", "reduced", "still")[frameLevel]} (slow frames ${(ratio * 100).toInt()}%)")
+        lastLogged = frameLevel
+      }
       seen = 0
       slow = 0
     }
   }
+  private var lastLogged = FULL
 
   @Volatile private var frameBudgetNs = 16_666_666L
+  private const val MIN_SLOW_NS = 25_000_000L
 
   private val powerReceiver = object : BroadcastReceiver() {
     override fun onReceive(c: Context, intent: Intent) {
