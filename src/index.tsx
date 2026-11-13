@@ -7,6 +7,8 @@
 import GlassTabs from './components/glass-tabs';
 
 export { GlassTabs };
+export { GlassView, BlurView, LiquidGlassView } from './components/glass-view';
+export type { GlassViewProps } from './components/glass-view';
 export default GlassTabs;
 export type {
   GlassTabsProps,
