@@ -20,16 +20,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     reactNativeDelegate = delegate
     reactNativeFactory = factory
-
-    window = UIWindow(frame: UIScreen.main.bounds)
-
-    factory.startReactNative(
-      withModuleName: "glasstabsexample",
-      in: window,
-      launchOptions: launchOptions
-    )
-
+    // The window is created per scene (SceneDelegate): iOS 27 requires the scene lifecycle.
     return true
+  }
+}
+
+/// Creates the app's window for each scene and starts React Native in it.
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+  var window: UIWindow?
+
+  func scene(
+    _ scene: UIScene,
+    willConnectTo session: UISceneSession,
+    options connectionOptions: UIScene.ConnectionOptions
+  ) {
+    guard let windowScene = scene as? UIWindowScene,
+          let app = UIApplication.shared.delegate as? AppDelegate,
+          let factory = app.reactNativeFactory else { return }
+    let window = UIWindow(windowScene: windowScene)
+    self.window = window
+    app.window = window
+    factory.startReactNative(withModuleName: "glasstabsexample", in: window, launchOptions: nil)
   }
 }
 
