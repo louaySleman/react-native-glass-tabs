@@ -19,6 +19,9 @@ export interface AppConfig {
   labeled: boolean;
   hapticFeedback: boolean;
   blur: boolean;
+  liquid: boolean;
+  /** Glass background opacity in percent (undefined = the look's default). */
+  glassOpacity?: number;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -27,6 +30,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   labeled: true,
   hapticFeedback: true,
   blur: true,
+  liquid: false,
 };
 
 // ─── Sub-components ───
@@ -58,6 +62,30 @@ const ToggleRow: React.FC<{
         )}
       </View>
       <Switch value={value} onValueChange={onToggle} />
+    </View>
+  );
+};
+
+const StepperRow: React.FC<{ label: string; value: number; onChange: (v: number) => void }> = ({ label, value, onChange }) => {
+  const theme = useTheme();
+  const step = (d: number) => onChange(Math.max(0, Math.min(100, value + d)));
+  return (
+    <View style={[s.row, { borderBottomColor: theme.colors.border }]}>
+      <View style={s.rowLeft}>
+        <Text style={[s.rowLabel, { color: theme.colors.text }]}>{label}</Text>
+        <View style={[s.badge, s.badgeAndroid]}>
+          <Text style={s.badgeText}>Android</Text>
+        </View>
+      </View>
+      <View style={s.stepper}>
+        <TouchableOpacity onPress={() => step(-10)} style={[s.stepBtn, { backgroundColor: theme.colors.background }]}>
+          <Text style={[s.stepText, { color: theme.colors.text }]}>−</Text>
+        </TouchableOpacity>
+        <Text style={[s.stepValue, { color: theme.colors.text }]}>{value}%</Text>
+        <TouchableOpacity onPress={() => step(10)} style={[s.stepBtn, { backgroundColor: theme.colors.background }]}>
+          <Text style={[s.stepText, { color: theme.colors.text }]}>+</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -115,8 +143,14 @@ const ConfigScreen: React.FC<{
       <View style={[s.card, { backgroundColor: theme.colors.card }]}>
         <ToggleRow label="Floating" value={config.floating} onToggle={v => onUpdate({ floating: v })} badge="Android" />
         <ToggleRow label="Labeled" value={config.labeled} onToggle={v => onUpdate({ labeled: v })} />
-        <ToggleRow label="Haptic Feedback" value={config.hapticFeedback} onToggle={v => onUpdate({ hapticFeedback: v })} badge="iOS" />
+        <ToggleRow label="Haptic Feedback" value={config.hapticFeedback} onToggle={v => onUpdate({ hapticFeedback: v })} />
         <ToggleRow label="Blur" value={config.blur} onToggle={v => onUpdate({ blur: v })} badge="Android" />
+        <ToggleRow label="Liquid Glass" value={config.liquid} onToggle={v => onUpdate({ liquid: v })} badge="Android" />
+        <StepperRow
+          label="Glass Opacity"
+          value={config.glassOpacity ?? (config.liquid ? 19 : 47)}
+          onChange={v => onUpdate({ glassOpacity: v })}
+        />
       </View>
 
       <View style={s.infoBox}>
@@ -145,6 +179,10 @@ const s = StyleSheet.create({
   colorPicker: { flexDirection: 'row', gap: 10, marginTop: 10 },
   colorDot: { width: 32, height: 32, borderRadius: 16 },
   colorDotSelected: { borderWidth: 3 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  stepBtn: { width: 34, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  stepText: { fontSize: 18, fontWeight: '700' },
+  stepValue: { fontSize: 15, fontWeight: '600', minWidth: 42, textAlign: 'center' },
   infoBox: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, paddingHorizontal: 4 },
   infoText: { fontSize: 13, flex: 1 },
 });

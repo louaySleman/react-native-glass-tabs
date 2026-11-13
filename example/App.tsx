@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { useColorScheme } from 'react-native';
+import { StatusBar, useColorScheme } from 'react-native';
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { GlassTabs } from 'react-native-glass-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { createNativeIcon } from './src/utils/icons';
 import {
   ConfigScreen,
+  HomeScreen,
   SearchScreen,
   ChatScreen,
   ProfileScreen,
@@ -41,19 +42,20 @@ const App = () => {
   );
 
   return (
-    <NavigationContainer  theme={isDark ? DarkTheme : DefaultTheme}>
+    <NavigationContainer theme={isDark ? DarkTheme : DefaultTheme}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />
       <GlassTabs
         tabs={[
           {
-            name: 'Config',
-            component: ConfigTab,
-            title: 'Config',
-            header: { title: 'Glass Tabs Config'},
+            name: 'Home',
+            component: HomeScreen,
+            title: 'Home',
+            header: false,
             renderIcon: {
-              sfSymbol: 'gearshape.fill',
-              nativeIcon: createNativeIcon('settings', 'settings-outline'),
+              sfSymbol: 'house.fill',
+              nativeIcon: createNativeIcon('home', 'home-outline'),
               render: ({ color, size, focused }) => (
-                <Ionicons name={focused ? 'settings' : 'settings-outline'} size={size} color={color} />
+                <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
               ),
             },
           },
@@ -62,6 +64,7 @@ const App = () => {
             component: SearchScreen,
             title: 'Search',
             role: 'search',
+            header: { title: 'Search' },
             renderIcon: {
               sfSymbol: 'magnifyingglass',
               nativeIcon: createNativeIcon('search', 'search-outline'),
@@ -73,14 +76,14 @@ const App = () => {
           {
             name: 'Chat',
             component: ChatTab,
-            title: 'Chat',
+            title: 'Chats',
             badge: chatBadge || undefined,
-            header: { title: 'Chat'},
+            header: { title: 'Chats' },
             renderIcon: {
               sfSymbol: 'bubble.left.fill',
-              nativeIcon: createNativeIcon('chatbubble', 'chatbubble-outline'),
+              nativeIcon: createNativeIcon('chatbubbles', 'chatbubbles-outline'),
               render: ({ color, size, focused }) => (
-                <Ionicons name={focused ? 'chatbubble' : 'chatbubble-outline'} size={size} color={color} />
+                <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={size} color={color} />
               ),
             },
           },
@@ -90,10 +93,23 @@ const App = () => {
             title: 'Profile',
             header: false,
             renderIcon: {
-              sfSymbol: 'person.fill',
-              nativeIcon: createNativeIcon('person', 'person-outline'),
+              sfSymbol: 'person.crop.circle.fill',
+              nativeIcon: createNativeIcon('person-circle', 'person-circle-outline'),
               render: ({ color, size, focused }) => (
-                <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
+                <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={size} color={color} />
+              ),
+            },
+          },
+          {
+            name: 'Settings',
+            component: ConfigTab,
+            title: 'Settings',
+            header: { title: 'Glass Tabs Settings' },
+            renderIcon: {
+              sfSymbol: 'gearshape.fill',
+              nativeIcon: createNativeIcon('settings', 'settings-outline'),
+              render: ({ color, size, focused }) => (
+                <Ionicons name={focused ? 'settings' : 'settings-outline'} size={size} color={color} />
               ),
             },
           },
@@ -103,6 +119,8 @@ const App = () => {
         labeled={config.labeled}
         hapticFeedback={config.hapticFeedback}
         blurRadius={config.blur ? 25 : 0}
+        glassEffect={config.liquid ? 'liquid' : 'blur'}
+        backgroundOpacity={config.glassOpacity}
         colorScheme={isDark ? 'dark' : 'light'}
       />
     </NavigationContainer>
