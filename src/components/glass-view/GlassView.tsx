@@ -104,7 +104,8 @@ export const GlassView: React.FC<GlassViewProps> = ({
     return (
       <View
         style={[
-          { backgroundColor: hexToRgba(tint, alpha), overflow: 'hidden' },
+          styles.clip,
+          { backgroundColor: hexToRgba(tint, alpha) },
           style,
         ]}
         {...rest}

@@ -14,12 +14,17 @@ const MATERIAL3_PARENT = 'Theme.Material3.DayNight.NoActionBar';
  * Sets the parent of the app's theme (`AppTheme` by default) to Material 3 in a parsed
  * styles.xml (the shape Expo's `withAndroidStyles` gives). Pure: returns the edited object.
  */
-function setMaterial3Theme(styles, themeName = 'AppTheme', parent = MATERIAL3_PARENT) {
+function setMaterial3Theme(
+  styles,
+  themeName = 'AppTheme',
+  parent = MATERIAL3_PARENT
+) {
   const resources = styles.resources || (styles.resources = {});
   const list = resources.style || (resources.style = []);
   const theme = list.find((s) => s && s.$ && s.$.name === themeName);
   if (theme) {
-    if (!String(theme.$.parent || '').startsWith('Theme.Material3')) theme.$.parent = parent;
+    if (!String(theme.$.parent || '').startsWith('Theme.Material3'))
+      theme.$.parent = parent;
   } else {
     list.push({ $: { name: themeName, parent }, item: [] });
   }
@@ -37,7 +42,11 @@ function loadPlugins() {
 function withGlassTabs(config, options = {}) {
   const { withAndroidStyles } = loadPlugins();
   return withAndroidStyles(config, (cfg) => {
-    cfg.modResults = setMaterial3Theme(cfg.modResults, options.themeName, options.parent);
+    cfg.modResults = setMaterial3Theme(
+      cfg.modResults,
+      options.themeName,
+      options.parent
+    );
     return cfg;
   });
 }

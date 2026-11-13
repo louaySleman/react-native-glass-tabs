@@ -6,8 +6,16 @@ describe('setMaterial3Theme', () => {
       resources: {
         style: [
           {
-            $: { name: 'AppTheme', parent: 'Theme.AppCompat.DayNight.NoActionBar' },
-            item: [{ $: { name: 'android:editTextBackground' }, _: '@drawable/rn_edit_text_material' }],
+            $: {
+              name: 'AppTheme',
+              parent: 'Theme.AppCompat.DayNight.NoActionBar',
+            },
+            item: [
+              {
+                $: { name: 'android:editTextBackground' },
+                _: '@drawable/rn_edit_text_material',
+              },
+            ],
           },
         ],
       },
@@ -18,17 +26,32 @@ describe('setMaterial3Theme', () => {
   });
 
   it('leaves an existing Material 3 theme alone', () => {
-    const styles = { resources: { style: [{ $: { name: 'AppTheme', parent: 'Theme.Material3.Light' } }] } };
-    expect(setMaterial3Theme(styles).resources.style[0].$.parent).toBe('Theme.Material3.Light');
+    const styles = {
+      resources: {
+        style: [{ $: { name: 'AppTheme', parent: 'Theme.Material3.Light' } }],
+      },
+    };
+    expect(setMaterial3Theme(styles).resources.style[0].$.parent).toBe(
+      'Theme.Material3.Light'
+    );
   });
 
   it('adds the theme when there is none', () => {
     const out = setMaterial3Theme({});
-    expect(out.resources.style).toEqual([{ $: { name: 'AppTheme', parent: MATERIAL3_PARENT }, item: [] }]);
+    expect(out.resources.style).toEqual([
+      { $: { name: 'AppTheme', parent: MATERIAL3_PARENT }, item: [] },
+    ]);
   });
 
   it('supports a custom theme name and parent', () => {
-    const out = setMaterial3Theme({}, 'MyTheme', 'Theme.Material3.Light.NoActionBar');
-    expect(out.resources.style[0].$).toEqual({ name: 'MyTheme', parent: 'Theme.Material3.Light.NoActionBar' });
+    const out = setMaterial3Theme(
+      {},
+      'MyTheme',
+      'Theme.Material3.Light.NoActionBar'
+    );
+    expect(out.resources.style[0].$).toEqual({
+      name: 'MyTheme',
+      parent: 'Theme.Material3.Light.NoActionBar',
+    });
   });
 });
