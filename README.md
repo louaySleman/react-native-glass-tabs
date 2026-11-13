@@ -14,16 +14,17 @@
 ### iOS — Liquid Glass (iOS 26+)
 
 <p float="left">
-  <img src="images/ios-1.png" width="220" alt="iOS Config - Liquid Glass Tab Bar" />
-  <img src="images/ios-2.png" width="220" alt="iOS Chat - Scrolling with Liquid Glass" />
-  <img src="images/ios-3.png" width="220" alt="iOS Config - Purple Theme" />
-  <img src="images/ios-4.png" width="220" alt="iOS Profile - Cards with Liquid Glass" />
+  <img src="images/ios-search.jpg" width="220" alt="iOS - Search grid under the liquid glass tab bar" />
+  <img src="images/ios-chats.jpg" width="220" alt="iOS - Chats with a tab badge" />
+  <img src="images/ios-profile-dark.jpg" width="220" alt="iOS - Profile in dark mode" />
+  <img src="images/ios-settings.jpg" width="220" alt="iOS - Settings" />
 </p>
 
 `BlurView` / `LiquidGlassView` on iOS 26+ (Apple's own liquid glass):
 
 <p float="left">
   <img src="images/ios-glass-views.jpg" width="220" alt="iOS - BlurView and LiquidGlassView chips over photos" />
+  <img src="images/ios-glass-views-dark.jpg" width="220" alt="iOS - BlurView and LiquidGlassView chips in dark mode" />
 </p>
 
 ### Android — Blur & Liquid Glass (new in 1.1)
