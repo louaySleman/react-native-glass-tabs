@@ -17,6 +17,7 @@ import {
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import type { TabConfig } from '../../types/glassTabs';
 import { DEFAULTS } from '../../config/defaults';
+import { lighten } from '../../utils/colors';
 import AnimatedTabIcon from './AnimatedTabIcon';
 import { styles } from './styles';
 
@@ -26,9 +27,15 @@ const GlassBarNativeView = requireNativeComponent<{
     cornerRadius: number;
     opacity: number;
     blurRadius: number;
+    effect: 'blur' | 'liquid';
+    adaptiveIcons: boolean;
+    backgroundOpacity?: number | null;
     backgroundColor: string;
     darkMode: boolean;
   };
+  /** Bumped on every tab press: the native view plays a light haptic tick. */
+  hapticToken?: number;
+  onBackdropChange?: (e: { nativeEvent: { dark: boolean } }) => void;
   style: any;
 }>('GlassBarNativeView');
 
@@ -41,7 +48,8 @@ const GlassFadeNativeView = requireNativeComponent<{
 interface GlassTabBarProps extends BottomTabBarProps {
   tabs: TabConfig[];
   primaryColor: string;
-  inactiveColor: string;
+  /** Unset: picked per look (flat / blur / liquid) for contrast on the glass. */
+  inactiveColor?: string;
   backgroundColor: string;
   opacity: number;
   cornerRadius: number;
@@ -49,6 +57,10 @@ interface GlassTabBarProps extends BottomTabBarProps {
   floatingMargin: number;
   labeled: boolean;
   blurRadius: number;
+  glassEffect?: 'blur' | 'liquid';
+  hapticFeedback?: boolean;
+  adaptiveIconColors?: boolean;
+  backgroundOpacity?: number;
   isDark: boolean;
 }
 
@@ -73,8 +85,76 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
   floatingMargin,
   labeled,
   blurRadius,
+  glassEffect = 'blur',
+  hapticFeedback = true,
+  adaptiveIconColors = true,
+  backgroundOpacity,
   isDark,
 }) => {
+  const [hapticToken, setHapticToken] = useState(0);
+  // Icon and selection colours that read well on each look: liquid glass is nearly clear, so
+  // icons go near-black / near-white (like iOS) and the selection is a neutral glass capsule.
+  // Liquid glass stays liquid with blur 0 (a clear lens); plain blur with radius 0 is flat.
+  const look =
+    glassEffect === 'liquid' ? 'liquid' : blurRadius <= 0 ? 'flat' : 'blur';
+  // What shows through the glass, as measured by the native bar: dark content gets light icons
+  // and light content dark icons, whatever the app's theme (like iOS). Until the first
+  // measurement (and on the flat bar), the theme decides.
+  const [backdropDark, setBackdropDark] = useState<boolean | null>(null);
+  useEffect(() => setBackdropDark(null), [look, isDark]);
+  const onDark =
+    adaptiveIconColors && look !== 'flat' && backdropDark != null
+      ? backdropDark
+      : isDark;
+  const onBackdropChange = useCallback(
+    (e: { nativeEvent: { dark: boolean } }) =>
+      setBackdropDark(e.nativeEvent.dark),
+    []
+  );
+  /** Colours for icons, labels and the selection over a dark (true) or light (false) backdrop. */
+  const palette = (dark: boolean) => ({
+    idle:
+      inactiveColor ??
+      (look === 'liquid'
+        ? dark
+          ? DEFAULTS.LIQUID_INACTIVE_DARK
+          : DEFAULTS.LIQUID_INACTIVE
+        : look === 'blur'
+        ? dark
+          ? DEFAULTS.BLUR_INACTIVE_DARK
+          : DEFAULTS.BLUR_INACTIVE
+        : DEFAULTS.INACTIVE_COLOR),
+    // On dark glass a saturated tint (e.g. #007AFF) is too dark to read: lift it a little.
+    active:
+      look !== 'flat' && dark ? lighten(primaryColor, 0.35) : primaryColor,
+    selector:
+      look === 'liquid'
+        ? dark
+          ? '#FFFFFF'
+          : DEFAULTS.LIQUID_SELECTOR_LIGHT
+        : primaryColor,
+    selectorAlpha:
+      look === 'liquid'
+        ? dark
+          ? DEFAULTS.LIQUID_SELECTOR_ALPHA_DARK
+          : DEFAULTS.LIQUID_SELECTOR_ALPHA
+        : DEFAULTS.SELECTOR_ALPHA,
+  });
+  // Both colour sets are drawn and cross-faded (on the native driver) when the backdrop flips,
+  // so icons and labels fade between dark and light instead of jumping.
+  const adaptive = look !== 'flat' && adaptiveIconColors;
+  const lightSet = palette(false);
+  const darkSet = palette(true);
+  const fade = useRef(new Animated.Value(onDark ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.timing(fade, {
+      toValue: onDark ? 1 : 0,
+      duration: DEFAULTS.CONTRAST_FADE_DURATION,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [onDark, fade]);
+  const fadeOut = fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
   const bgColor = isDark ? DEFAULTS.DARK_BACKGROUND : backgroundColor;
   const screenBgColor = isDark
     ? DEFAULTS.DARK_SCREEN_BACKGROUND
@@ -93,10 +173,25 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
       cornerRadius,
       opacity,
       blurRadius,
+      effect: glassEffect,
+      adaptiveIcons: adaptiveIconColors,
+      backgroundOpacity:
+        backgroundOpacity == null
+          ? null
+          : Math.max(0, Math.min(100, backgroundOpacity)),
       backgroundColor: bgColor,
       darkMode: isDark,
     }),
-    [cornerRadius, opacity, blurRadius, bgColor, isDark]
+    [
+      cornerRadius,
+      opacity,
+      blurRadius,
+      glassEffect,
+      adaptiveIconColors,
+      backgroundOpacity,
+      bgColor,
+      isDark,
+    ]
   );
 
   const fadeConfig = useMemo(
@@ -146,13 +241,14 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
         >
           <GlassBarNativeView
             glassConfig={glassConfig}
+            hapticToken={hapticToken}
+            onBackdropChange={adaptiveIconColors ? onBackdropChange : undefined}
             style={[styles.nativeGlass, { borderRadius: cornerRadius }]}
           />
 
           {state.routes.map((route: any, index: number) => {
             const isFocused = state.index === index;
             const tab = tabs[index]!;
-            const iconColor = isFocused ? primaryColor : inactiveColor;
             const layout = tabLayouts[index];
 
             const selectorScale = selectorScales[index]!.interpolate({
@@ -168,6 +264,7 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
             });
 
             const onPress = () => {
+              if (hapticFeedback) setHapticToken((t) => t + 1);
               const event = navigation.emit({
                 type: 'tabPress',
                 target: route.key,
@@ -199,57 +296,85 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
                   style={styles.tabItem}
                   onLayout={(e) => onTabLayout(index, e)}
                 >
-                  <Animated.View
-                    style={[
-                      styles.selector,
-                      {
-                        backgroundColor: primaryColor,
-                        opacity: Animated.multiply(
-                          selectorOpacity,
-                          DEFAULTS.SELECTOR_ALPHA
-                        ),
-                        borderRadius: layout
-                          ? Math.min(
-                              layout.width - 12,
-                              DEFAULTS.TAB_BAR_HEIGHT - 12
-                            ) / 2
-                          : 22,
-                        transform: [{ scale: selectorScale }],
-                      },
-                    ]}
-                  />
-
-                  <View style={styles.iconWrapper}>
-                    <AnimatedTabIcon
-                      tab={tab}
-                      focused={isFocused}
-                      color={iconColor}
-                    />
-
-                    {tab.badge != null && (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>
-                          {typeof tab.badge === 'number' &&
-                          tab.badge > DEFAULTS.BADGE_MAX
-                            ? `${DEFAULTS.BADGE_MAX}+`
-                            : String(tab.badge)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {labeled && (
-                    <Text
-                      style={[
-                        styles.label,
-                        { color: iconColor },
-                        isFocused && styles.labelFocused,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {tab.title}
-                    </Text>
-                  )}
+                  {(adaptive
+                    ? [lightSet, darkSet]
+                    : [onDark ? darkSet : lightSet]
+                  ).map((set, layer) => {
+                    const layerOpacity = adaptive
+                      ? layer === 0
+                        ? fadeOut
+                        : fade
+                      : 1;
+                    const iconColor = isFocused ? set.active : set.idle;
+                    return (
+                      <React.Fragment key={layer}>
+                        <Animated.View
+                          style={[
+                            styles.selector,
+                            {
+                              backgroundColor: set.selector,
+                              opacity: Animated.multiply(
+                                Animated.multiply(
+                                  selectorOpacity,
+                                  set.selectorAlpha
+                                ),
+                                layerOpacity
+                              ),
+                              borderRadius: layout
+                                ? Math.min(
+                                    layout.width - 12,
+                                    DEFAULTS.TAB_BAR_HEIGHT - 12
+                                  ) / 2
+                                : 22,
+                              transform: [{ scale: selectorScale }],
+                            },
+                          ]}
+                        />
+                        <Animated.View
+                          style={[
+                            layer === 1
+                              ? styles.contentOverlay
+                              : styles.content,
+                            { opacity: layerOpacity },
+                          ]}
+                          importantForAccessibility={
+                            layer === 1 ? 'no-hide-descendants' : 'auto'
+                          }
+                          pointerEvents="none"
+                        >
+                          <View style={styles.iconWrapper}>
+                            <AnimatedTabIcon
+                              tab={tab}
+                              focused={isFocused}
+                              color={iconColor}
+                            />
+                            {tab.badge != null && (
+                              <View style={styles.badge}>
+                                <Text style={styles.badgeText}>
+                                  {typeof tab.badge === 'number' &&
+                                  tab.badge > DEFAULTS.BADGE_MAX
+                                    ? `${DEFAULTS.BADGE_MAX}+`
+                                    : String(tab.badge)}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          {labeled && (
+                            <Text
+                              style={[
+                                styles.label,
+                                { color: iconColor },
+                                isFocused && styles.labelFocused,
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {tab.title}
+                            </Text>
+                          )}
+                        </Animated.View>
+                      </React.Fragment>
+                    );
+                  })}
                 </View>
               </TouchableWithoutFeedback>
             );

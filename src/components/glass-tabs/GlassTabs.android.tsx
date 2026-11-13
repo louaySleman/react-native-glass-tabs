@@ -93,14 +93,18 @@ const renderScreen = (
 const FloatingNavigator: React.FC<GlassTabsProps> = ({
   tabs,
   primaryColor = DEFAULTS.PRIMARY_COLOR,
-  inactiveColor = DEFAULTS.INACTIVE_COLOR,
+  inactiveColor,
   backgroundColor = DEFAULTS.BACKGROUND_COLOR,
   opacity = DEFAULTS.OPACITY,
   cornerRadius = DEFAULTS.CORNER_RADIUS,
   floating = DEFAULTS.FLOATING,
   floatingMargin = DEFAULTS.TAB_BAR_MARGIN,
   labeled = DEFAULTS.LABELED,
+  hapticFeedback = DEFAULTS.HAPTIC_FEEDBACK,
   blurRadius = DEFAULTS.BLUR_RADIUS,
+  glassEffect = 'blur',
+  adaptiveIconColors = true,
+  backgroundOpacity,
   colorScheme: colorSchemePref,
   initialRouteName,
   lazy,
@@ -137,6 +141,10 @@ const FloatingNavigator: React.FC<GlassTabsProps> = ({
         floatingMargin={floatingMargin}
         labeled={labeled}
         blurRadius={blurRadius}
+        glassEffect={glassEffect}
+        hapticFeedback={hapticFeedback}
+        adaptiveIconColors={adaptiveIconColors}
+        backgroundOpacity={backgroundOpacity}
         isDark={isDark}
       />
     ),
@@ -151,6 +159,10 @@ const FloatingNavigator: React.FC<GlassTabsProps> = ({
       floatingMargin,
       labeled,
       blurRadius,
+      glassEffect,
+      hapticFeedback,
+      adaptiveIconColors,
+      backgroundOpacity,
       isDark,
     ]
   );
@@ -223,6 +235,7 @@ const NativeMaterialNavigator: React.FC<GlassTabsProps> = ({
   inactiveColor = DEFAULTS.INACTIVE_COLOR,
   backgroundColor = DEFAULTS.BACKGROUND_COLOR,
   labeled = DEFAULTS.LABELED,
+  hapticFeedback = DEFAULTS.HAPTIC_FEEDBACK,
   colorScheme: colorSchemePref,
   initialRouteName,
   activeIndicatorColor,
@@ -241,6 +254,7 @@ const NativeMaterialNavigator: React.FC<GlassTabsProps> = ({
       key={isDark ? 'dark' : 'light'}
       initialRouteName={initialRouteName ?? tabs[0]?.name}
       labeled={labeled}
+      hapticFeedbackEnabled={hapticFeedback}
       tabBarActiveTintColor={primaryColor}
       tabBarInactiveTintColor={effectiveInactive}
       activeIndicatorColor={

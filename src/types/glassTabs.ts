@@ -229,12 +229,29 @@ export interface GlassTabsProps {
   floating?: boolean;
   /** Android floating margin (dp). Android floating only. */
   floatingMargin?: number;
-  /** Enable haptic feedback on tab press. iOS only. */
+  /** Light haptic tick on tab press (iOS and Android). Default: true. */
   hapticFeedback?: boolean;
   /** Show text labels under icons. */
   labeled?: boolean;
   /** Android blur radius (px, API 31+). Android floating only. */
   blurRadius?: number;
+  /**
+   * Android glass look. `'blur'` (default): frosted glass, Android 12+.
+   * `'liquid'`: iOS 26-style liquid glass — lighter blur, edges that bend what's behind them and
+   * a light rim, Android 13+ (Android 12 shows `'blur'`). Android floating only.
+   */
+  glassEffect?: 'blur' | 'liquid';
+  /**
+   * Android glass: switch the icons between dark and light depending on what shows through
+   * the bar (light icons over dark photos, dark icons over light pages), like iOS. Only when
+   * `inactiveColor` isn't set for the inactive icons. Default: true.
+   */
+  adaptiveIconColors?: boolean;
+  /**
+   * Android blur / liquid glass: how much of the tint covers the glass, in percent (0–100).
+   * Default 47 for blur, 19 for liquid glass. Lower shows more of what's behind.
+   */
+  backgroundOpacity?: number;
   /** Initial active tab name. */
   initialRouteName?: string;
   /** Tab bar translucency. iOS only. */

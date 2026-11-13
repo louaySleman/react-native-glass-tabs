@@ -48,6 +48,20 @@ export const styles = StyleSheet.create({
     right: 6,
     bottom: 6,
   },
+  content: {
+    alignItems: 'center',
+  },
+  /** Second colour set, stacked exactly over the first while they cross-fade. */
+  contentOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
   iconWrapper: {
     position: 'relative',
   },
