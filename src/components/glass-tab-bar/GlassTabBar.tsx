@@ -91,7 +91,7 @@ const fadeTo = (v: Animated.Value, target: number) =>
  * - Native GlassFadeView for a smooth fade under the bar
  * - One selection pill that springs to the pressed tab, stretching on the way like a drop of
  *   liquid and squishing a little under the finger (all on the native driver)
- * - Icons and labels that fade between dark and light, tab by tab, with what shows through
+ * - Icons and labels that fade between dark and light together with what shows through
  */
 const GlassTabBar: React.FC<GlassTabBarProps> = ({
   state,
@@ -118,30 +118,16 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
     glassEffect === 'liquid' ? 'liquid' : blurRadius <= 0 ? 'flat' : 'blur';
   const adaptive = look !== 'flat' && adaptiveIconColors;
 
-  // What shows through the glass, as measured by the native bar, overall and per tab. Until
-  // the first measurement (and on the flat bar) the app's theme decides.
-  const [backdrop, setBackdrop] = useState<{
-    dark: boolean | null;
-    segments: boolean[];
-  }>({
-    dark: null,
-    segments: [],
-  });
-  useEffect(() => setBackdrop({ dark: null, segments: [] }), [look, isDark]);
+  // What shows through the glass, as measured by the native bar (the whole bar at once, so
+  // every tab switches together). Until the first measurement (and on the flat bar) the app's
+  // theme decides.
+  const [backdropDark, setBackdropDark] = useState<boolean | null>(null);
+  useEffect(() => setBackdropDark(null), [look, isDark]);
   const onBackdropChange = useCallback(
-    (e: BackdropEvent) =>
-      setBackdrop({
-        dark: e.nativeEvent.dark,
-        segments: e.nativeEvent.segments ?? [],
-      }),
+    (e: BackdropEvent) => setBackdropDark(e.nativeEvent.dark),
     []
   );
-  const darkAt = (i: number): boolean => {
-    if (!adaptive) return isDark;
-    const seg = backdrop.segments[i];
-    if (seg != null) return seg;
-    return backdrop.dark ?? isDark;
-  };
+  const onDark = adaptive && backdropDark != null ? backdropDark : isDark;
 
   /** Colours for icons, labels and the selection over a dark (true) or light (false) backdrop. */
   const palette = (dark: boolean): Palette => ({
@@ -175,22 +161,11 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
   const lightSet = palette(false);
   const darkSet = palette(true);
 
-  // One fade value per tab (icons and label), and one for the selection pill (follows the tab
-  // it sits on). Both colour sets are drawn and cross-faded, so nothing ever jumps.
-  const tabFades = useRef<Animated.Value[]>([]);
-  if (tabFades.current.length !== tabs.length) {
-    tabFades.current = tabs.map(
-      (_, i) => new Animated.Value(darkAt(i) ? 1 : 0)
-    );
-  }
-  const selFade = useRef(
-    new Animated.Value(darkAt(state.index) ? 1 : 0)
-  ).current;
-  const darkKey = tabs.map((_, i) => (darkAt(i) ? 1 : 0)).join('');
-  useEffect(() => {
-    tabFades.current.forEach((v, i) => fadeTo(v, darkKey[i] === '1' ? 1 : 0));
-    fadeTo(selFade, darkKey[state.index] === '1' ? 1 : 0);
-  }, [darkKey, state.index, selFade]);
+  // One fade for every icon, label and the selection pill: both colour sets are drawn and
+  // cross-faded together, so the whole bar changes at once and nothing ever jumps.
+  const fade = useRef(new Animated.Value(onDark ? 1 : 0)).current;
+  useEffect(() => fadeTo(fade, onDark ? 1 : 0), [onDark, fade]);
+  const fadeOut = fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
 
   const bgColor = isDark ? DEFAULTS.DARK_BACKGROUND : backgroundColor;
   const screenBgColor = isDark
@@ -280,7 +255,7 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
           : Math.max(0, Math.min(100, backgroundOpacity)),
       backgroundColor: bgColor,
       darkMode: isDark,
-      segments: adaptiveIconColors ? tabs.length : 0,
+      segments: 0,
     }),
     [
       cornerRadius,
@@ -291,7 +266,6 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
       backgroundOpacity,
       bgColor,
       isDark,
-      tabs.length,
     ]
   );
 
@@ -355,12 +329,7 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
                       layer === -1
                         ? set.selectorAlpha
                         : Animated.multiply(
-                            layer === 1
-                              ? selFade
-                              : selFade.interpolate({
-                                  inputRange: [0, 1],
-                                  outputRange: [1, 0],
-                                }),
+                            layer === 1 ? fade : fadeOut,
                             set.selectorAlpha
                           ),
                   },
@@ -371,7 +340,6 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
           {state.routes.map((route: any, index: number) => {
             const isFocused = state.index === index;
             const tab = tabs[index]!;
-            const fade = tabFades.current[index]!;
 
             const onPress = () => {
               if (hapticFeedback) setHapticToken((t) => t + 1);
@@ -407,14 +375,7 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
                 >
                   {sets.map(([set, layer]) => {
                     const layerOpacity =
-                      layer === -1
-                        ? 1
-                        : layer === 1
-                        ? fade
-                        : fade.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [1, 0],
-                          });
+                      layer === -1 ? 1 : layer === 1 ? fade : fadeOut;
                     const iconColor = isFocused ? set.active : set.idle;
                     return (
                       <Animated.View

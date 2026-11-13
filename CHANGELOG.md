@@ -7,7 +7,6 @@
 - **Adaptive icon colours** (`adaptiveIconColors`, default on): the bar measures what shows through it and fades icons and labels between dark and light, like iOS.
 - **`backgroundOpacity`**: the glass tint coverage as a percentage, for blur and liquid glass.
 - **`<BlurView>`, `<LiquidGlassView>` and `<GlassView>`**: the same glass around any content. Text and icons inside fade to white over dark content (and back) natively, with no extra code.
-- **Per-tab adaptive colours**: each tab's icon and label follow what's behind its own part of the bar.
 - **Liquid selection pill**: one pill springs between tabs, stretching like a drop of liquid and squishing when pressed (native driver).
 - **Automatic quality**: the glass watches frame times and, on phones that keep dropping frames (over 25 ms), re-records its backdrop less often while scrolling, down to only once motion stops; battery saver does the same. Level changes are logged under the `GlassTabs` tag.
 - **iOS glass views**: `BlurView` / `LiquidGlassView` use the system materials on iOS, with real `UIGlassEffect` liquid glass on iOS 26+.

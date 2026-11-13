@@ -50,7 +50,7 @@ Example app photos are loaded at runtime from [Unsplash](https://unsplash.com/li
 - **iOS 18 and below**: Standard native UITabBarController
 - **Android 12+**: GPU-blurred frosted glass floating pill (Telegram-style)
 - **Android 13+**: iOS 26-style **liquid glass** option — edge refraction, light rim, clear centre (`glassEffect="liquid"`)
-- **Adaptive icons, tab by tab**: each tab's icon and label fade between dark and light depending on what's behind *that part* of the glass, like iOS
+- **Adaptive icons**: all icons and labels fade between dark and light together, depending on what's behind the glass, like iOS
 - **Liquid selection**: one selection pill that springs to the pressed tab, stretching on the way like a drop of liquid and squishing under your finger
 - **`<BlurView>` / `<LiquidGlassView>`**: the same glass around any content, on Android *and* iOS (real `UIGlassEffect` liquid glass on iOS 26+); on Android, text and icons inside adapt by themselves
 - **Backs off on slow phones**: the glass watches frame times and, when a phone keeps dropping frames, re-records its backdrop less often while scrolling (main-thread work); battery saver does the same
@@ -467,7 +467,7 @@ A small native Kotlin view (no third-party blur library) draws a live, GPU-blurr
 - **Nothing is redrawn in software.** Before each frame the bar records, into its own `RenderNode`, only the views behind it — through their existing display lists, so it's a handful of references, not a re-render of the screen.
 - **Only the strip under the bar**, at ¼ resolution, is blurred on the GPU with `RenderEffect`. While the screen scrolls, the backdrop refreshes at most ~30 times a second (a blur hides the difference), with a final refresh when motion stops.
 - **Liquid glass** (Android 13+) adds a small AGSL shader on the same node — edge refraction, a little extra colour — and a hairline light rim, at almost the same cost.
-- **Adaptive colours**: a 24×6 copy of the backdrop is measured a few times a second (one shared sampler for the whole app), column by column, to tell whether what shows through each tab is dark or light.
+- **Adaptive colours**: a 24×6 copy of the backdrop is measured a few times a second (one shared sampler for the whole app), to tell whether what shows through is dark or light; the whole bar then fades its icons together.
 - **Automatic quality**: a frame-time monitor lowers how often the backdrop is re-recorded while things move when the phone keeps dropping frames (30 → 15 per second → only once motion stops), and steps back up when frames are smooth again; battery saver uses the lowest level. (The GPU blur itself still follows the content behind it live.) Level changes are logged under the `GlassTabs` tag.
 - **Idle costs nothing**: work only happens on frames the app draws anyway; off-screen glass views do no work at all.
 - **Android 11 and below, low-RAM phones**: a flat translucent pill.
