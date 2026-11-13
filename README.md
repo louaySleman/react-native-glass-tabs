@@ -14,7 +14,7 @@
 ### iOS — Liquid Glass (iOS 26+)
 
 <p float="left">
-  <img src="images/ios-search.jpg" width="220" alt="iOS - Search grid under the liquid glass tab bar" />
+  <img src="images/ios-search.jpg" width="220" alt="iOS - Search grid, with search as its own round glass button" />
   <img src="images/ios-chats.jpg" width="220" alt="iOS - Chats with a tab badge" />
   <img src="images/ios-profile-dark.jpg" width="220" alt="iOS - Profile in dark mode" />
   <img src="images/ios-settings.jpg" width="220" alt="iOS - Settings" />
@@ -47,7 +47,7 @@ Example app photos are loaded at runtime from [Unsplash](https://unsplash.com/li
 
 ## Features
 
-- **iOS 26+**: Native liquid glass with SF Symbols and search role via SwiftUI TabView
+- **iOS 26+**: Native liquid glass with SF Symbols, plus a search tab set apart as a round button (`role: 'search'` on iOS 26, `role: 'prominent'` on iOS 27+) via SwiftUI TabView
 - **iOS 18 and below**: Standard native UITabBarController
 - **Android 13+ (API 33+)**: GPU-blurred frosted glass floating pill (Telegram-style)
 - **Liquid glass** option (Android 13+): iOS 26-style — edge refraction, light rim, clear centre (`glassEffect="liquid"`)
@@ -247,7 +247,7 @@ const createNativeIcon = (filled: string, outline: string) => {
 | `component` | `ComponentType` | Screen component |
 | `title` | `string` | Tab label |
 | `renderIcon` | `(props) => ReactNode \| PlatformIcons` | Simple render function or platform-specific object with `sfSymbol` (iOS 26+), `nativeIcon` (Android Material 3), and `render` (JS fallback) |
-| `role` | `'search'?` | iOS liquid glass search tab role |
+| `role` | `'search' \| 'prominent'` | iOS liquid glass tab role. `'search'`: the search tab, set apart as a round button on iOS 26 (inside the bar on iOS 27). `'prominent'`: set apart as a round button on iOS 27+ (react-native-bottom-tabs 1.5+), ignored before |
 | `badge` | `number \| string?` | Badge value |
 | `header` | `false \| HeaderConfig?` | Header configuration. `undefined` → default header, `false` → no header, `HeaderConfig` → custom header |
 | `accessibilityLabel` | `string?` | Accessibility label for the tab button (screen readers) |
@@ -457,7 +457,7 @@ On Android, text and icons inside **adapt by themselves, natively**: over dark c
 ## How it works
 
 ### iOS 26+ (Liquid Glass)
-Uses `@bottom-tabs/react-navigation` which wraps SwiftUI's `TabView` with native liquid glass effects. SF Symbols are rendered natively. Each tab is wrapped in a `@react-navigation/native-stack` with transparent headers and native blur. The `search` role activates the native iOS search tab appearance.
+Uses `@bottom-tabs/react-navigation` which wraps SwiftUI's `TabView` with native liquid glass effects. SF Symbols are rendered natively. Each tab is wrapped in a `@react-navigation/native-stack` with transparent headers and native blur. The `search` role activates the native iOS search tab appearance (a separate round button on iOS 26); on iOS 27 that look comes from the `prominent` role.
 
 ### iOS 18 and below
 Uses `@react-navigation/bottom-tabs` with standard `UITabBarController` styling. Your `render` function is used for all icons. Headers use the built-in bottom-tabs header system. Dark mode adapts tab bar background, borders, and header text colors automatically.

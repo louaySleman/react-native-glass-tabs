@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { StatusBar, useColorScheme } from 'react-native';
+import { Platform, StatusBar, useColorScheme } from 'react-native';
 import {
   NavigationContainer,
   DarkTheme,
@@ -18,6 +18,12 @@ import {
   DEFAULT_CONFIG,
 } from './src/screens';
 import type { AppConfig } from './src/screens';
+
+/** iOS 27 sets a tab apart as a round button with the `prominent` role; iOS 26 did it for `search`. */
+const SEARCH_ROLE =
+  Platform.OS === 'ios' && parseInt(String(Platform.Version), 10) >= 27
+    ? 'prominent'
+    : 'search';
 
 const App = () => {
   const colorScheme = useColorScheme();
@@ -77,7 +83,7 @@ const App = () => {
               name: 'Search',
               component: SearchScreen,
               title: 'Search',
-              role: 'search',
+              role: SEARCH_ROLE,
               header: { title: 'Search' },
               renderIcon: {
                 sfSymbol: 'magnifyingglass',
