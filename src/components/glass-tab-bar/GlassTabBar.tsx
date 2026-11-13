@@ -21,6 +21,8 @@ import { lighten } from '../../utils/colors';
 import AnimatedTabIcon from './AnimatedTabIcon';
 import { styles } from './styles';
 
+type BackdropEvent = { nativeEvent: { dark: boolean; segments?: boolean[] } };
+
 /** Native glass background: GPU backdrop blur in Kotlin (GlassBarView). */
 const GlassBarNativeView = requireNativeComponent<{
   glassConfig: {
@@ -32,10 +34,12 @@ const GlassBarNativeView = requireNativeComponent<{
     backgroundOpacity?: number | null;
     backgroundColor: string;
     darkMode: boolean;
+    /** Measure each tab's slice of the bar separately (dark/light per tab). */
+    segments: number;
   };
   /** Bumped on every tab press: the native view plays a light haptic tick. */
   hapticToken?: number;
-  onBackdropChange?: (e: { nativeEvent: { dark: boolean } }) => void;
+  onBackdropChange?: (e: BackdropEvent) => void;
   style: any;
 }>('GlassBarNativeView');
 
@@ -64,13 +68,30 @@ interface GlassTabBarProps extends BottomTabBarProps {
   isDark: boolean;
 }
 
+type Palette = {
+  idle: string;
+  active: string;
+  selector: string;
+  selectorAlpha: number;
+};
+
+/** Fades towards `target` (0 = light-backdrop colours, 1 = dark-backdrop colours). */
+const fadeTo = (v: Animated.Value, target: number) =>
+  Animated.timing(v, {
+    toValue: target,
+    duration: DEFAULTS.CONTRAST_FADE_DURATION,
+    easing: Easing.inOut(Easing.ease),
+    useNativeDriver: true,
+  }).start();
+
 /**
- * Android frosted glass tab bar.
+ * Android floating glass tab bar.
  *
- * - Native GlassBarView: GPU backdrop blur of what is behind the bar
- * - Native GlassFadeView for smooth LinearGradient fade
- * - Animated selector that scales from center (Telegram-style)
- * - Icon crossfade between outline and filled states
+ * - Native GlassBarView: GPU backdrop blur / liquid glass of what is behind the bar
+ * - Native GlassFadeView for a smooth fade under the bar
+ * - One selection pill that springs to the pressed tab, stretching on the way like a drop of
+ *   liquid and squishing a little under the finger (all on the native driver)
+ * - Icons and labels that fade between dark and light, tab by tab, with what shows through
  */
 const GlassTabBar: React.FC<GlassTabBarProps> = ({
   state,
@@ -92,27 +113,38 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
   isDark,
 }) => {
   const [hapticToken, setHapticToken] = useState(0);
-  // Icon and selection colours that read well on each look: liquid glass is nearly clear, so
-  // icons go near-black / near-white (like iOS) and the selection is a neutral glass capsule.
   // Liquid glass stays liquid with blur 0 (a clear lens); plain blur with radius 0 is flat.
   const look =
     glassEffect === 'liquid' ? 'liquid' : blurRadius <= 0 ? 'flat' : 'blur';
-  // What shows through the glass, as measured by the native bar: dark content gets light icons
-  // and light content dark icons, whatever the app's theme (like iOS). Until the first
-  // measurement (and on the flat bar), the theme decides.
-  const [backdropDark, setBackdropDark] = useState<boolean | null>(null);
-  useEffect(() => setBackdropDark(null), [look, isDark]);
-  const onDark =
-    adaptiveIconColors && look !== 'flat' && backdropDark != null
-      ? backdropDark
-      : isDark;
+  const adaptive = look !== 'flat' && adaptiveIconColors;
+
+  // What shows through the glass, as measured by the native bar, overall and per tab. Until
+  // the first measurement (and on the flat bar) the app's theme decides.
+  const [backdrop, setBackdrop] = useState<{
+    dark: boolean | null;
+    segments: boolean[];
+  }>({
+    dark: null,
+    segments: [],
+  });
+  useEffect(() => setBackdrop({ dark: null, segments: [] }), [look, isDark]);
   const onBackdropChange = useCallback(
-    (e: { nativeEvent: { dark: boolean } }) =>
-      setBackdropDark(e.nativeEvent.dark),
+    (e: BackdropEvent) =>
+      setBackdrop({
+        dark: e.nativeEvent.dark,
+        segments: e.nativeEvent.segments ?? [],
+      }),
     []
   );
+  const darkAt = (i: number): boolean => {
+    if (!adaptive) return isDark;
+    const seg = backdrop.segments[i];
+    if (seg != null) return seg;
+    return backdrop.dark ?? isDark;
+  };
+
   /** Colours for icons, labels and the selection over a dark (true) or light (false) backdrop. */
-  const palette = (dark: boolean) => ({
+  const palette = (dark: boolean): Palette => ({
     idle:
       inactiveColor ??
       (look === 'liquid'
@@ -140,33 +172,100 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
           : DEFAULTS.LIQUID_SELECTOR_ALPHA
         : DEFAULTS.SELECTOR_ALPHA,
   });
-  // Both colour sets are drawn and cross-faded (on the native driver) when the backdrop flips,
-  // so icons and labels fade between dark and light instead of jumping.
-  const adaptive = look !== 'flat' && adaptiveIconColors;
   const lightSet = palette(false);
   const darkSet = palette(true);
-  const fade = useRef(new Animated.Value(onDark ? 1 : 0)).current;
+
+  // One fade value per tab (icons and label), and one for the selection pill (follows the tab
+  // it sits on). Both colour sets are drawn and cross-faded, so nothing ever jumps.
+  const tabFades = useRef<Animated.Value[]>([]);
+  if (tabFades.current.length !== tabs.length) {
+    tabFades.current = tabs.map(
+      (_, i) => new Animated.Value(darkAt(i) ? 1 : 0)
+    );
+  }
+  const selFade = useRef(
+    new Animated.Value(darkAt(state.index) ? 1 : 0)
+  ).current;
+  const darkKey = tabs.map((_, i) => (darkAt(i) ? 1 : 0)).join('');
   useEffect(() => {
-    Animated.timing(fade, {
-      toValue: onDark ? 1 : 0,
-      duration: DEFAULTS.CONTRAST_FADE_DURATION,
-      easing: Easing.inOut(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-  }, [onDark, fade]);
-  const fadeOut = fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+    tabFades.current.forEach((v, i) => fadeTo(v, darkKey[i] === '1' ? 1 : 0));
+    fadeTo(selFade, darkKey[state.index] === '1' ? 1 : 0);
+  }, [darkKey, state.index, selFade]);
+
   const bgColor = isDark ? DEFAULTS.DARK_BACKGROUND : backgroundColor;
   const screenBgColor = isDark
     ? DEFAULTS.DARK_SCREEN_BACKGROUND
     : DEFAULTS.LIGHT_SCREEN_BACKGROUND;
 
-  const selectorScales = useRef<Animated.Value[]>(
-    tabs.map((_, i) => new Animated.Value(i === 0 ? 1 : 0))
-  ).current;
+  // ---- Selection pill: position (in tabs), stretch while travelling, squish while pressed ----
+  const [tabW, setTabW] = useState(0);
+  const pos = useRef(new Animated.Value(state.index)).current;
+  const stretch = useRef(new Animated.Value(0)).current;
+  const reach = useRef(new Animated.Value(0)).current;
+  const press = useRef(new Animated.Value(1)).current;
+  const lastIndex = useRef(state.index);
+  useEffect(() => {
+    const from = lastIndex.current;
+    lastIndex.current = state.index;
+    if (from === state.index) return;
+    // Further jumps stretch more, up to half the pill again.
+    reach.setValue(Math.min(0.5, 0.14 + 0.12 * Math.abs(state.index - from)));
+    Animated.parallel([
+      Animated.spring(pos, {
+        toValue: state.index,
+        stiffness: 260,
+        damping: 24,
+        mass: 1,
+        useNativeDriver: true,
+      }),
+      Animated.sequence([
+        Animated.timing(stretch, {
+          toValue: 1,
+          duration: 110,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.spring(stretch, {
+          toValue: 0,
+          stiffness: 220,
+          damping: 16,
+          mass: 1,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, [state.index, pos, stretch, reach]);
+  const squish = (to: number) =>
+    Animated.spring(press, {
+      toValue: to,
+      stiffness: 420,
+      damping: 22,
+      mass: 1,
+      useNativeDriver: true,
+    }).start();
 
-  const [tabLayouts, setTabLayouts] = useState<
-    Record<number, { x: number; width: number; height: number }>
-  >({});
+  const pillH = DEFAULTS.TAB_BAR_HEIGHT - 12;
+  const pillW = Math.max(0, tabW - 12);
+  const pillStyle = {
+    width: pillW,
+    height: pillH,
+    borderRadius: Math.min(pillW, pillH) / 2,
+    transform: [
+      { translateX: Animated.add(Animated.multiply(pos, tabW), 6) },
+      {
+        scaleX: Animated.multiply(
+          Animated.add(1, Animated.multiply(stretch, reach)),
+          press
+        ),
+      },
+      {
+        scaleY: Animated.multiply(
+          Animated.subtract(1, Animated.multiply(stretch, 0.1)),
+          press
+        ),
+      },
+    ],
+  };
 
   const glassConfig = useMemo(
     () => ({
@@ -181,6 +280,7 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
           : Math.max(0, Math.min(100, backgroundOpacity)),
       backgroundColor: bgColor,
       darkMode: isDark,
+      segments: adaptiveIconColors ? tabs.length : 0,
     }),
     [
       cornerRadius,
@@ -191,6 +291,7 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
       backgroundOpacity,
       bgColor,
       isDark,
+      tabs.length,
     ]
   );
 
@@ -199,22 +300,16 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
     [screenBgColor, isDark]
   );
 
-  useEffect(() => {
-    const animations = selectorScales.map((scale, i) =>
-      Animated.timing(scale, {
-        toValue: state.index === i ? 1 : 0,
-        duration: DEFAULTS.SELECTOR_DURATION,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      })
-    );
-    Animated.parallel(animations).start();
-  }, [state.index, selectorScales]);
-
   const onTabLayout = useCallback((index: number, event: LayoutChangeEvent) => {
-    const { x, width, height } = event.nativeEvent.layout;
-    setTabLayouts((prev) => ({ ...prev, [index]: { x, width, height } }));
+    if (index === 0) setTabW(event.nativeEvent.layout.width);
   }, []);
+
+  const sets: [Palette, number][] = adaptive
+    ? [
+        [lightSet, 0],
+        [darkSet, 1],
+      ]
+    : [[isDark ? darkSet : lightSet, -1]];
 
   return (
     <View style={styles.outerWrapper} pointerEvents="box-none">
@@ -246,22 +341,37 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
             style={[styles.nativeGlass, { borderRadius: cornerRadius }]}
           />
 
+          {tabW > 0 &&
+            sets.map(([set, layer]) => (
+              <Animated.View
+                key={`pill-${layer}`}
+                pointerEvents="none"
+                style={[
+                  styles.selector,
+                  pillStyle,
+                  {
+                    backgroundColor: set.selector,
+                    opacity:
+                      layer === -1
+                        ? set.selectorAlpha
+                        : Animated.multiply(
+                            layer === 1
+                              ? selFade
+                              : selFade.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [1, 0],
+                                }),
+                            set.selectorAlpha
+                          ),
+                  },
+                ]}
+              />
+            ))}
+
           {state.routes.map((route: any, index: number) => {
             const isFocused = state.index === index;
             const tab = tabs[index]!;
-            const layout = tabLayouts[index];
-
-            const selectorScale = selectorScales[index]!.interpolate({
-              inputRange: [0, 1],
-              outputRange: [
-                DEFAULTS.SELECTOR_SCALE_FROM,
-                DEFAULTS.SELECTOR_SCALE_TO,
-              ],
-            });
-            const selectorOpacity = selectorScales[index]!.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, 1],
-            });
+            const fade = tabFades.current[index]!;
 
             const onPress = () => {
               if (hapticFeedback) setHapticToken((t) => t + 1);
@@ -276,16 +386,15 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
             };
 
             const onLongPress = () => {
-              navigation.emit({
-                type: 'tabLongPress',
-                target: route.key,
-              });
+              navigation.emit({ type: 'tabLongPress', target: route.key });
             };
 
             return (
               <TouchableWithoutFeedback
                 key={route.key}
                 onPress={onPress}
+                onPressIn={() => squish(0.92)}
+                onPressOut={() => squish(1)}
                 onLongPress={onLongPress}
                 accessibilityRole="button"
                 accessibilityState={isFocused ? { selected: true } : {}}
@@ -296,83 +405,59 @@ const GlassTabBar: React.FC<GlassTabBarProps> = ({
                   style={styles.tabItem}
                   onLayout={(e) => onTabLayout(index, e)}
                 >
-                  {(adaptive
-                    ? [lightSet, darkSet]
-                    : [onDark ? darkSet : lightSet]
-                  ).map((set, layer) => {
-                    const layerOpacity = adaptive
-                      ? layer === 0
-                        ? fadeOut
-                        : fade
-                      : 1;
+                  {sets.map(([set, layer]) => {
+                    const layerOpacity =
+                      layer === -1
+                        ? 1
+                        : layer === 1
+                        ? fade
+                        : fade.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [1, 0],
+                          });
                     const iconColor = isFocused ? set.active : set.idle;
                     return (
-                      <React.Fragment key={layer}>
-                        <Animated.View
-                          style={[
-                            styles.selector,
-                            {
-                              backgroundColor: set.selector,
-                              opacity: Animated.multiply(
-                                Animated.multiply(
-                                  selectorOpacity,
-                                  set.selectorAlpha
-                                ),
-                                layerOpacity
-                              ),
-                              borderRadius: layout
-                                ? Math.min(
-                                    layout.width - 12,
-                                    DEFAULTS.TAB_BAR_HEIGHT - 12
-                                  ) / 2
-                                : 22,
-                              transform: [{ scale: selectorScale }],
-                            },
-                          ]}
-                        />
-                        <Animated.View
-                          style={[
-                            layer === 1
-                              ? styles.contentOverlay
-                              : styles.content,
-                            { opacity: layerOpacity },
-                          ]}
-                          importantForAccessibility={
-                            layer === 1 ? 'no-hide-descendants' : 'auto'
-                          }
-                          pointerEvents="none"
-                        >
-                          <View style={styles.iconWrapper}>
-                            <AnimatedTabIcon
-                              tab={tab}
-                              focused={isFocused}
-                              color={iconColor}
-                            />
-                            {tab.badge != null && (
-                              <View style={styles.badge}>
-                                <Text style={styles.badgeText}>
-                                  {typeof tab.badge === 'number' &&
-                                  tab.badge > DEFAULTS.BADGE_MAX
-                                    ? `${DEFAULTS.BADGE_MAX}+`
-                                    : String(tab.badge)}
-                                </Text>
-                              </View>
-                            )}
-                          </View>
-                          {labeled && (
-                            <Text
-                              style={[
-                                styles.label,
-                                { color: iconColor },
-                                isFocused && styles.labelFocused,
-                              ]}
-                              numberOfLines={1}
-                            >
-                              {tab.title}
-                            </Text>
+                      <Animated.View
+                        key={layer}
+                        style={[
+                          layer === 1 ? styles.contentOverlay : styles.content,
+                          { opacity: layerOpacity },
+                        ]}
+                        importantForAccessibility={
+                          layer === 1 ? 'no-hide-descendants' : 'auto'
+                        }
+                        pointerEvents="none"
+                      >
+                        <View style={styles.iconWrapper}>
+                          <AnimatedTabIcon
+                            tab={tab}
+                            focused={isFocused}
+                            color={iconColor}
+                          />
+                          {tab.badge != null && (
+                            <View style={styles.badge}>
+                              <Text style={styles.badgeText}>
+                                {typeof tab.badge === 'number' &&
+                                tab.badge > DEFAULTS.BADGE_MAX
+                                  ? `${DEFAULTS.BADGE_MAX}+`
+                                  : String(tab.badge)}
+                              </Text>
+                            </View>
                           )}
-                        </Animated.View>
-                      </React.Fragment>
+                        </View>
+                        {labeled && (
+                          <Text
+                            style={[
+                              styles.label,
+                              { color: iconColor },
+                              isFocused && styles.labelFocused,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {tab.title}
+                          </Text>
+                        )}
+                      </Animated.View>
                     );
                   })}
                 </View>

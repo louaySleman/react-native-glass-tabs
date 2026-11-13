@@ -41,12 +41,11 @@ export const styles = StyleSheet.create({
     paddingVertical: 6,
     zIndex: 1,
   },
+  /** The one selection pill: sized and moved by the bar (translateX / scale). */
   selector: {
     position: 'absolute',
     top: 6,
-    left: 6,
-    right: 6,
-    bottom: 6,
+    left: 0,
   },
   content: {
     alignItems: 'center',
