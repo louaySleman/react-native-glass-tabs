@@ -7,6 +7,12 @@
 - **Adaptive icon colours** (`adaptiveIconColors`, default on): the bar measures what shows through it and fades icons and labels between dark and light, like iOS.
 - **`backgroundOpacity`**: the glass tint coverage as a percentage, for blur and liquid glass.
 - **`<BlurView>`, `<LiquidGlassView>` and `<GlassView>`**: the same glass around any content. Text and icons inside fade to white over dark content (and back) natively, with no extra code.
+- **Per-tab adaptive colours**: each tab's icon and label follow what's behind its own part of the bar.
+- **Liquid selection pill**: one pill springs between tabs, stretching like a drop of liquid and squishing when pressed (native driver).
+- **Automatic quality**: the glass watches frame times and refreshes less while scrolling on phones that drop frames (or only once motion stops); battery saver does the same.
+- **iOS glass views**: `BlurView` / `LiquidGlassView` use the system materials on iOS, with real `UIGlassEffect` liquid glass on iOS 26+.
+- **Expo config plugin**: `"plugins": ["react-native-glass-tabs"]` sets the Material 3 theme.
+- **CI** builds the example app for Android and iOS.
 - **Haptics on Android**: `hapticFeedback` now ticks on tab press on Android too, and is passed to the Material 3 bar.
 - Inactive icon colours now default per look for contrast on the glass. The liquid glass selection is a neutral glass capsule.
 - Android 11 and below and low-RAM phones keep the flat translucent bar (never a crash).

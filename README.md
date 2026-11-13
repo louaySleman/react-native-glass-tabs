@@ -20,6 +20,12 @@
   <img src="images/ios-4.png" width="220" alt="iOS Profile - Cards with Liquid Glass" />
 </p>
 
+`BlurView` / `LiquidGlassView` on iOS 26+ (Apple's own liquid glass):
+
+<p float="left">
+  <img src="images/ios-glass-views.jpg" width="220" alt="iOS - BlurView and LiquidGlassView chips over photos" />
+</p>
+
 ### Android — Blur & Liquid Glass (new in 1.1)
 
 <p float="left">
@@ -44,8 +50,10 @@ Example app photos are loaded at runtime from [Unsplash](https://unsplash.com/li
 - **iOS 18 and below**: Standard native UITabBarController
 - **Android 12+**: GPU-blurred frosted glass floating pill (Telegram-style)
 - **Android 13+**: iOS 26-style **liquid glass** option — edge refraction, light rim, clear centre (`glassEffect="liquid"`)
-- **Adaptive icons**: icons fade between dark and light depending on what's behind the glass, like iOS
-- **`<BlurView>` / `<LiquidGlassView>`**: the same glass around any content; text and icons inside adapt by themselves
+- **Adaptive icons, tab by tab**: each tab's icon and label fade between dark and light depending on what's behind *that part* of the glass, like iOS
+- **Liquid selection**: one selection pill that springs to the pressed tab, stretching on the way like a drop of liquid and squishing under your finger
+- **`<BlurView>` / `<LiquidGlassView>`**: the same glass around any content, on Android *and* iOS (real `UIGlassEffect` liquid glass on iOS 26+); on Android, text and icons inside adapt by themselves
+- **Never the reason a phone lags**: the glass watches frame times and refreshes less while scrolling on slow phones (or holds still and catches up when motion stops); battery saver does the same
 - **Haptics on iOS and Android** when switching tabs
 - **Light on CPU**: the blur reuses Android's own display lists and only works on frames the app draws anyway — an idle screen costs nothing
 - **Android 11 and below / low-RAM phones**: semi-transparent floating pill (no blur), never a crash
@@ -81,9 +89,17 @@ yarn add react-native-glass-tabs
 npm install @react-navigation/native @react-navigation/bottom-tabs react-native-screens react-native-safe-area-context
 ```
 
+### Expo
+
+Add the config plugin (it sets the Material 3 theme for you) and make a development build:
+
+```json
+{ "expo": { "plugins": ["react-native-glass-tabs"] } }
+```
+
 ### Android Setup
 
-No extra repositories or blur libraries are needed (the blur is built in). Update `android/app/src/main/res/values/styles.xml`:
+No extra repositories or blur libraries are needed (the blur is built in). Update `android/app/src/main/res/values/styles.xml` (the Expo plugin does this for you):
 
 ```xml
 <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
@@ -423,7 +439,7 @@ import { BlurView, LiquidGlassView } from 'react-native-glass-tabs';
 </LiquidGlassView>
 ```
 
-Text and icons inside **adapt by themselves, natively**: over dark content they fade to white, and back to their own colour over light content (in dark mode, light text fades to near-black over light content). No props or state needed.
+On Android, text and icons inside **adapt by themselves, natively**: over dark content they fade to white, and back to their own colour over light content (in dark mode, light text fades to near-black over light content). No props or state needed. On iOS the views use the system's own materials — `UIGlassEffect` liquid glass on iOS 26+, the frosted system materials before that and for `BlurView` — which handle light / dark by themselves.
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
@@ -435,7 +451,7 @@ Text and icons inside **adapt by themselves, natively**: over dark content they 
 | `colorScheme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Force light/dark or follow the system |
 | `onBackdropChange` | `(dark: boolean) => void` | — | Called when what shows through turns dark or light |
 
-`borderRadius` from `style` shapes the glass. Live blur needs Android 12+ (liquid glass 13+); on iOS and older Android these render a translucent tinted view of the same shape, so layouts look right everywhere.
+`borderRadius` from `style` shapes the glass. On Android, live blur needs Android 12+ (liquid glass 13+); older Android renders a translucent tinted view of the same shape, so layouts look right everywhere.
 
 ## How it works
 
@@ -451,7 +467,8 @@ A small native Kotlin view (no third-party blur library) draws a live, GPU-blurr
 - **Nothing is redrawn in software.** Before each frame the bar records, into its own `RenderNode`, only the views behind it — through their existing display lists, so it's a handful of references, not a re-render of the screen.
 - **Only the strip under the bar**, at ¼ resolution, is blurred on the GPU with `RenderEffect`. While the screen scrolls, the backdrop refreshes at most ~30 times a second (a blur hides the difference), with a final refresh when motion stops.
 - **Liquid glass** (Android 13+) adds a small AGSL shader on the same node — edge refraction, a little extra colour — and a hairline light rim, at almost the same cost.
-- **Adaptive colours**: a 24×6 copy of the backdrop is measured a few times a second (one shared sampler for the whole app) to tell whether what shows through is dark or light.
+- **Adaptive colours**: a 24×6 copy of the backdrop is measured a few times a second (one shared sampler for the whole app), column by column, to tell whether what shows through each tab is dark or light.
+- **Automatic quality**: a frame-time monitor lowers how often the glass refreshes while things move when the phone starts dropping frames (30 → 15 per second → only once motion stops), and steps back up when frames are smooth again. Battery saver uses the lowest level.
 - **Idle costs nothing**: work only happens on frames the app draws anyway; off-screen glass views do no work at all.
 - **Android 11 and below, low-RAM phones**: a flat translucent pill.
 
@@ -474,7 +491,7 @@ Install `react-native-glass-tabs` and wrap your screens in a single `<GlassTabs>
 
 ### Does this work with Expo?
 
-Yes. The JavaScript-based navigators work out of the box with Expo. For the native Android glass (the tab bar background, `BlurView` and `LiquidGlassView`), you need a development build (`expo prebuild`). The package gracefully falls back when native modules aren't available.
+Yes. Add `"plugins": ["react-native-glass-tabs"]` to your app config and use a development build (`expo prebuild` / EAS) for the native glass (the tab bar background, `BlurView` and `LiquidGlassView`). The JavaScript-based navigators work in Expo Go, and the package gracefully falls back when native modules aren't available.
 
 ### Does this support React Navigation 7?
 
