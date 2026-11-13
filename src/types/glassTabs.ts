@@ -233,12 +233,12 @@ export interface GlassTabsProps {
   hapticFeedback?: boolean;
   /** Show text labels under icons. */
   labeled?: boolean;
-  /** Android blur radius (px, API 31+). Android floating only. */
+  /** Android blur radius (px, Android 13+; ignored below). Android floating only. */
   blurRadius?: number;
   /**
-   * Android glass look. `'blur'` (default): frosted glass, Android 12+.
+   * Android glass look. `'blur'` (default): frosted glass, Android 13+.
    * `'liquid'`: iOS 26-style liquid glass — lighter blur, edges that bend what's behind them and
-   * a light rim, Android 13+ (Android 12 shows `'blur'`). Android floating only.
+   * a light rim, Android 13+. Android floating only.
    */
   glassEffect?: 'blur' | 'liquid';
   /**

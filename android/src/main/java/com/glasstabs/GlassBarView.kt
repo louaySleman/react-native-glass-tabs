@@ -33,7 +33,7 @@ import kotlin.math.ceil
 /**
  * Frosted glass bar: a live, GPU-blurred copy of whatever is drawn behind it, under a tint.
  *
- * How it stays cheap (Android 12+):
+ * How it stays cheap (Android 13+):
  *  - Nothing is redrawn in software. Before each frame the bar records, into its own RenderNode,
  *    only the views that sit *behind* it (ancestors' backgrounds and the siblings below it, at
  *    every level). Those views are drawn through their existing display lists, so recording is a
@@ -46,7 +46,7 @@ import kotlin.math.ceil
  * the same node bends what's behind the edges (like a lens), adds a touch of saturation, and a
  * crisp light rim is drawn on top. Same capture, so nearly the same cost.
  *
- * Android 11 and below, low-RAM phones, `blurRadius` 0, or [liveBlur] off: a flat tinted bar
+ * Android 12 and below, low-RAM phones, `blurRadius` 0, or [liveBlur] off: a flat tinted bar
  * (no capture at all).
  *
  * Used as the tab bar's background and, with React children, as the standalone BlurView /
@@ -103,7 +103,7 @@ class GlassBarView(context: Context) : FrameLayout(context), ViewTreeObserver.On
   private var contentAnim: ValueAnimator? = null
   private val relayout = ViewTreeObserver.OnGlobalLayoutListener { applyContentColor(contentColor) }
 
-  /** API 31+ only; typed as Any so older devices never load RenderNode / RenderEffect. */
+  /** Android 13+ only (see [BLUR_MIN_SDK]); typed as Any so older devices never load RenderNode / RenderEffect. */
   private var backdrop: Any? = null
   private var observed: ViewTreeObserver? = null
 
@@ -566,8 +566,11 @@ class GlassBarView(context: Context) : FrameLayout(context), ViewTreeObserver.On
   }
 
   companion object {
-    /** RenderNode + RenderEffect blur. */
-    const val BLUR_MIN_SDK = Build.VERSION_CODES.S
+    /**
+     * RenderNode + RenderEffect blur. RenderEffect exists from API 31, but the glass is kept to
+     * Android 13+ (as in 1.0.1): Android 12 and below get the flat translucent bar.
+     */
+    const val BLUR_MIN_SDK = Build.VERSION_CODES.TIRAMISU
 
     private const val CONTENT_DARK = 0xFF1C1C1E.toInt()
     private const val CAPTURE_INTERVAL_MS = 32L

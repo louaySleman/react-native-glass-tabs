@@ -48,15 +48,15 @@ Example app photos are loaded at runtime from [Unsplash](https://unsplash.com/li
 
 - **iOS 26+**: Native liquid glass with SF Symbols and search role via SwiftUI TabView
 - **iOS 18 and below**: Standard native UITabBarController
-- **Android 12+**: GPU-blurred frosted glass floating pill (Telegram-style)
-- **Android 13+**: iOS 26-style **liquid glass** option — edge refraction, light rim, clear centre (`glassEffect="liquid"`)
+- **Android 13+ (API 33+)**: GPU-blurred frosted glass floating pill (Telegram-style)
+- **Liquid glass** option (Android 13+): iOS 26-style — edge refraction, light rim, clear centre (`glassEffect="liquid"`)
 - **Adaptive icons**: all icons and labels fade between dark and light together, depending on what's behind the glass, like iOS
 - **Liquid selection**: one selection pill that springs to the pressed tab, stretching on the way like a drop of liquid and squishing under your finger
 - **`<BlurView>` / `<LiquidGlassView>`**: the same glass around any content, on Android *and* iOS (real `UIGlassEffect` liquid glass on iOS 26+); on Android, text and icons inside adapt by themselves
 - **Backs off on slow phones**: the glass watches frame times and, when a phone keeps dropping frames, re-records its backdrop less often while scrolling (main-thread work); battery saver does the same
 - **Haptics on iOS and Android** when switching tabs
 - **Light on CPU**: the blur reuses Android's own display lists and only works on frames the app draws anyway — an idle screen costs nothing
-- **Android 11 and below / low-RAM phones**: semi-transparent floating pill (no blur), never a crash
+- **Android 12 and below / low-RAM phones**: semi-transparent floating pill (no blur), never a crash
 - **Single API**: One component, adaptive rendering per platform/version
 - **New Architecture ready**: Fabric & TurboModules supported
 - **React Navigation 7+**: Drop-in compatible with `@react-navigation/bottom-tabs`
@@ -221,8 +221,8 @@ const createNativeIcon = (filled: string, outline: string) => {
 | `floatingMargin` | `number` | `8` | Android floating margin (dp) |
 | `hapticFeedback` | `boolean` | `true` | Light haptic tick on tab press (iOS and Android) |
 | `labeled` | `boolean` | `true` | Show text labels |
-| `blurRadius` | `number` | `25` | Android blur radius (1–25, Android 12+). `0` = no blur (flat bar, or a perfectly clear lens with liquid glass) |
-| `glassEffect` | `'blur' \| 'liquid'` | `'blur'` | Android glass look: frosted blur (12+) or iOS 26-style liquid glass (13+; Android 12 shows blur) |
+| `blurRadius` | `number` | `25` | Android blur radius (1–25, Android 13+; ignored below). `0` = no blur (flat bar, or a perfectly clear lens with liquid glass) |
+| `glassEffect` | `'blur' \| 'liquid'` | `'blur'` | Android glass look: frosted blur or iOS 26-style liquid glass (both Android 13+) |
 | `backgroundOpacity` | `number` | `47` / `19` | Android blur / liquid glass: how much of the tint covers the glass, in percent (0–100). Default 47 for blur, 19 for liquid |
 | `adaptiveIconColors` | `boolean` | `true` | Android: icons fade between dark and light depending on what shows through the glass |
 | `initialRouteName` | `string` | first tab | Initial active tab |
@@ -451,7 +451,7 @@ On Android, text and icons inside **adapt by themselves, natively**: over dark c
 | `colorScheme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Force light/dark or follow the system |
 | `onBackdropChange` | `(dark: boolean) => void` | — | Called when what shows through turns dark or light |
 
-`borderRadius` from `style` shapes the glass. On Android, live blur needs Android 12+ (liquid glass 13+); older Android renders a translucent tinted view of the same shape, so layouts look right everywhere.
+`borderRadius` from `style` shapes the glass. On Android, live blur and liquid glass need Android 13+; older Android renders a translucent tinted view of the same shape, so layouts look right everywhere.
 
 ## How it works
 
@@ -470,9 +470,9 @@ A small native Kotlin view (no third-party blur library) draws a live, GPU-blurr
 - **Adaptive colours**: a 24×6 copy of the backdrop is measured a few times a second (one shared sampler for the whole app), to tell whether what shows through is dark or light; the whole bar then fades its icons together.
 - **Automatic quality**: a frame-time monitor lowers how often the backdrop is re-recorded while things move when the phone keeps dropping frames (30 → 15 per second → only once motion stops), and steps back up when frames are smooth again; battery saver uses the lowest level. (The GPU blur itself still follows the content behind it live.) Level changes are logged under the `GlassTabs` tag.
 - **Idle costs nothing**: work only happens on frames the app draws anyway; off-screen glass views do no work at all.
-- **Android 11 and below, low-RAM phones**: a flat translucent pill.
+- **Android 12 and below, low-RAM phones**: a flat translucent pill.
 
-Measured on an Android 15 emulator flinging a long list: the previous BlurView-based bar used ~56% CPU (main thread ~22%); this one uses ~36% (main thread ~6%), against ~25% for a flat bar. Stress-tested with thousands of random events on a 2-core low-RAM device and on Android 11 with no crashes.
+Measured on an Android 15 emulator flinging a long list: the previous BlurView-based bar used ~56% CPU (main thread ~22%); this one uses ~36% (main thread ~6%), against ~25% for a flat bar. Stress-tested with thousands of random events on a 2-core low-RAM device, on Android 11 (flat bar) and on Android 13 with no crashes.
 
 Each tab is wrapped in a `@react-navigation/native-stack` for consistent headers across all modes.
 

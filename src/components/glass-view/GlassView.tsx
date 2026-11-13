@@ -16,7 +16,7 @@ import type { ColorSchemePreference } from '../../types/glassTabs';
 import { hexToRgba } from '../../utils/colors';
 
 export interface GlassViewProps extends ViewProps {
-  /** `'blur'` (frosted, Android 12+) or `'liquid'` (iOS 26-style, Android 13+). Default `'blur'`. */
+  /** `'blur'` (frosted, Android 13+) or `'liquid'` (iOS 26-style, Android 13+). Default `'blur'`. */
   effect?: 'blur' | 'liquid';
   /** Blur strength in px (1–25). Default 25. */
   blurRadius?: number;
@@ -24,7 +24,7 @@ export interface GlassViewProps extends ViewProps {
   tintColor?: string;
   /**
    * How much of the tint covers the glass, in percent (0–100). Default 47 for blur, 19 for
-   * liquid glass. On Android 11 and below (no live blur) the tint is shown more strongly.
+   * liquid glass. On Android 12 and below (no live blur) the tint is shown more strongly.
    */
   backgroundOpacity?: number;
   /**
@@ -66,7 +66,7 @@ const DEFAULT_OPACITY = { blur: 47, liquid: 19 };
  * (`effect="liquid"` adds iOS 26-style edge refraction and a light rim). Only what's behind it
  * is captured, and only on frames the app draws anyway, so it costs very little.
  *
- * Android: live blur 12+, liquid glass 13+ (older: a translucent tinted view of the same shape).
+ * Android: live blur and liquid glass 13+ (older: a translucent tinted view of the same shape).
  * iOS: the system's own materials — liquid glass (UIGlassEffect) on iOS 26+, frosted blur
  * before that and for `effect="blur"`; they adapt to light / dark by themselves.
  */
@@ -120,7 +120,7 @@ export const GlassView: React.FC<GlassViewProps> = ({
     effect,
     backgroundColor: tint,
     backgroundOpacity: pct,
-    // Without live blur (Android 11 and below) the flat tint uses this opacity.
+    // Without live blur (Android 12 and below) the flat tint uses this opacity.
     opacity: Math.min(0.94, pct / 100 + 0.5),
     adaptiveIcons: false,
     adaptiveContent,
@@ -152,7 +152,7 @@ export const GlassView: React.FC<GlassViewProps> = ({
   );
 };
 
-/** Frosted glass container (Android 12+). See {@link GlassView}. */
+/** Frosted glass container (Android 13+). See {@link GlassView}. */
 export const BlurView: React.FC<Omit<GlassViewProps, 'effect'>> = (props) => (
   <GlassView {...props} effect="blur" />
 );
