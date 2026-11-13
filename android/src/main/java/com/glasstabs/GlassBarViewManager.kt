@@ -7,7 +7,7 @@ import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.annotations.ReactProp
 
 /**
- * ViewManager exposing GlassBarView (wraps Dimezis/BlurView)
+ * ViewManager exposing GlassBarView (GPU backdrop blur, see GlassBarView)
  * as a React Native native component.
  */
 class GlassBarViewManager : SimpleViewManager<GlassBarView>() {

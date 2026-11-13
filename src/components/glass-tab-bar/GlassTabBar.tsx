@@ -20,7 +20,7 @@ import { DEFAULTS } from '../../config/defaults';
 import AnimatedTabIcon from './AnimatedTabIcon';
 import { styles } from './styles';
 
-/** Native glass background — wraps Dimezis/BlurView in Kotlin. */
+/** Native glass background: GPU backdrop blur in Kotlin (GlassBarView). */
 const GlassBarNativeView = requireNativeComponent<{
   glassConfig: {
     cornerRadius: number;
@@ -55,7 +55,7 @@ interface GlassTabBarProps extends BottomTabBarProps {
 /**
  * Android frosted glass tab bar.
  *
- * - Native GlassBarView (Dimezis/BlurView) for real hardware-accelerated blur
+ * - Native GlassBarView: GPU backdrop blur of what is behind the bar
  * - Native GlassFadeView for smooth LinearGradient fade
  * - Animated selector that scales from center (Telegram-style)
  * - Icon crossfade between outline and filled states
