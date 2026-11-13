@@ -27,8 +27,9 @@ cp -r "$ROOT_DIR/android/src" "$ROOT_DIR/$DIST_DIR/android/src"
 
 # Copy ios native code
 mkdir -p "$ROOT_DIR/$DIST_DIR/ios"
-cp "$ROOT_DIR/ios/GlassTabs.podspec" "$ROOT_DIR/$DIST_DIR/ios/"
-cp "$ROOT_DIR"/ios/*.h "$ROOT_DIR"/ios/*.mm "$ROOT_DIR/$DIST_DIR/ios/"
+# The podspec sits at the package root (where autolinking looks for it).
+cp "$ROOT_DIR/GlassTabs.podspec" "$ROOT_DIR/$DIST_DIR/"
+cp "$ROOT_DIR"/ios/* "$ROOT_DIR/$DIST_DIR/ios/"
 
 # Copy src (Metro resolves this at runtime + codegen needs it)
 cp -r "$ROOT_DIR/src" "$ROOT_DIR/$DIST_DIR/src"
