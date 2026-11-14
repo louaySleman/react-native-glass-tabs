@@ -206,6 +206,8 @@ const StandardNavigator: React.FC<GlassTabsProps> = ({
               isDark,
               ...IOS_HEADER_DEFAULTS,
             }),
+            // The tab's own title, not the header title React Navigation would fall back to.
+            tabBarLabel: tab.title,
             tabBarIcon: ({
               color,
               size,

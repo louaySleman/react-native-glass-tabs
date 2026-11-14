@@ -7,27 +7,38 @@
 
 **Links:** [GitHub](https://github.com/louaySleman/react-native-glass-tabs) · [npm](https://www.npmjs.com/package/react-native-glass-tabs) · [Issues](https://github.com/louaySleman/react-native-glass-tabs/issues) · [Example app](https://github.com/louaySleman/react-native-glass-tabs/tree/main/example)
 
-> A drop-in adaptive bottom tab navigator with liquid glass on iOS 26+, GPU-blurred floating pill on Android, and graceful fallbacks — all from a single `<GlassTabs>` component.
+> A drop-in adaptive bottom tab navigator with liquid glass on iOS 26+, a GPU-blurred or liquid glass floating pill on Android, and graceful fallbacks — all from a single `<GlassTabs>` component. Plus `<BlurView>` and `<LiquidGlassView>` for glass anywhere else in your app.
 
 ## Screenshots
 
 ### iOS — Liquid Glass (iOS 26+)
 
 <p float="left">
-  <img src="images/ios-1.png" width="220" alt="iOS Config - Liquid Glass Tab Bar" />
-  <img src="images/ios-2.png" width="220" alt="iOS Chat - Scrolling with Liquid Glass" />
-  <img src="images/ios-3.png" width="220" alt="iOS Config - Purple Theme" />
-  <img src="images/ios-4.png" width="220" alt="iOS Profile - Cards with Liquid Glass" />
+  <img src="images/ios-search.jpg" width="220" alt="iOS - Search grid, with search as its own round glass button" />
+  <img src="images/ios-chats.jpg" width="220" alt="iOS - Chats with a tab badge" />
+  <img src="images/ios-profile-dark.jpg" width="220" alt="iOS - Profile in dark mode" />
+  <img src="images/ios-settings.jpg" width="220" alt="iOS - Settings" />
 </p>
 
-### Android — Floating Glass Pill & Material 3
+`BlurView` / `LiquidGlassView` on iOS 26+ (Apple's own liquid glass):
 
 <p float="left">
-  <img src="images/android-2.png" width="220" alt="Android Config - Floating Glass Pill" />
-  <img src="images/android-3.png" width="220" alt="Android Chat - Floating Glass Pill with Badge" />
-  <img src="images/android-4.png" width="220" alt="Android Search - Floating Glass Pill" />
-  <img src="images/android-6.png" width="220" alt="Android Config - Floating Pill No Labels" />
+  <img src="images/ios-glass-views.jpg" width="220" alt="iOS - BlurView and LiquidGlassView chips over photos" />
+  <img src="images/ios-glass-views-dark.jpg" width="220" alt="iOS - BlurView and LiquidGlassView chips in dark mode" />
 </p>
+
+### Android — Blur & Liquid Glass (new in 1.1)
+
+<p float="left">
+  <img src="images/android-blur.jpg" width="220" alt="Android - Frosted blur tab bar with BlurView and LiquidGlassView chips" />
+  <img src="images/android-liquid.jpg" width="220" alt="Android - Liquid glass tab bar" />
+  <img src="images/android-liquid-dark.jpg" width="220" alt="Android - Liquid glass tab bar in dark mode" />
+  <img src="images/android-blur-dark.jpg" width="220" alt="Android - Frosted blur tab bar in dark mode" />
+</p>
+
+Example app photos are loaded at runtime from [Unsplash](https://unsplash.com/license) (free to use).
+
+### Android — Material 3
 
 <p float="left">
   <img src="images/android-1.png" width="220" alt="Android Config - Material 3 Native Tabs" />
@@ -36,10 +47,17 @@
 
 ## Features
 
-- **iOS 26+**: Native liquid glass with SF Symbols and search role via SwiftUI TabView
+- **iOS 26+**: Native liquid glass with SF Symbols, plus a search tab set apart as a round button (`role: 'search'` on iOS 26, `role: 'prominent'` on iOS 27+) via SwiftUI TabView
 - **iOS 18 and below**: Standard native UITabBarController
-- **Android 13+ (API 33+)**: GPU-accelerated frosted glass floating pill (Telegram-style)
-- **Android 12 and below**: Semi-transparent floating pill with elevation shadow
+- **Android 13+ (API 33+)**: GPU-blurred frosted glass floating pill (Telegram-style)
+- **Liquid glass** option (Android 13+): iOS 26-style — edge refraction, light rim, clear centre (`glassEffect="liquid"`)
+- **Adaptive icons**: all icons and labels fade between dark and light together, depending on what's behind the glass, like iOS
+- **Liquid selection**: one selection pill that springs to the pressed tab, stretching on the way like a drop of liquid and squishing under your finger
+- **`<BlurView>` / `<LiquidGlassView>`**: the same glass around any content, on Android *and* iOS (real `UIGlassEffect` liquid glass on iOS 26+); on Android, text and icons inside adapt by themselves
+- **Backs off on slow phones**: the glass watches frame times and, when a phone keeps dropping frames, re-records its backdrop less often while scrolling (main-thread work); battery saver does the same
+- **Haptics on iOS and Android** when switching tabs
+- **Light on CPU**: the blur reuses Android's own display lists and only works on frames the app draws anyway — an idle screen costs nothing
+- **Android 12 and below / low-RAM phones**: semi-transparent floating pill (no blur), never a crash
 - **Single API**: One component, adaptive rendering per platform/version
 - **New Architecture ready**: Fabric & TurboModules supported
 - **React Navigation 7+**: Drop-in compatible with `@react-navigation/bottom-tabs`
@@ -50,6 +68,8 @@
 |---------|:-----------------------:|:-----------------------------:|:------------------------:|
 | Liquid glass (iOS 26) | Yes | No | Yes |
 | GPU blur (Android) | Yes | No | No |
+| Liquid glass (Android) | Yes | No | No |
+| Blur / glass views for any content | Yes | No | No |
 | Floating pill style | Yes | No | No |
 | Single component API | Yes | No | No |
 | Graceful fallbacks | Yes | N/A | Partial |
@@ -70,9 +90,17 @@ yarn add react-native-glass-tabs
 npm install @react-navigation/native @react-navigation/bottom-tabs react-native-screens react-native-safe-area-context
 ```
 
+### Expo
+
+Add the config plugin (it sets the Material 3 theme for you) and make a development build:
+
+```json
+{ "expo": { "plugins": ["react-native-glass-tabs"] } }
+```
+
 ### Android Setup
 
-Update `android/app/src/main/res/values/styles.xml`:
+No extra repositories or blur libraries are needed (the blur is built in). Update `android/app/src/main/res/values/styles.xml` (the Expo plugin does this for you):
 
 ```xml
 <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
@@ -186,15 +214,18 @@ const createNativeIcon = (filled: string, outline: string) => {
 |------|------|---------|-------------|
 | `tabs` | `TabConfig[]` | **required** | Array of tab configurations (3-5 tabs) |
 | `primaryColor` | `string` | `'#007AFF'` | Active tab tint color |
-| `inactiveColor` | `string` | `'#8E8E93'` | Inactive tab tint color |
+| `inactiveColor` | `string` | per look | Inactive tab tint color. Unset: picked for contrast on the glass (and adapted to what's behind it on Android) |
 | `backgroundColor` | `string` | `'#FFFFFF'` | Bar background base color |
 | `opacity` | `number` | `0.85` | Android glass opacity (0-1) |
 | `cornerRadius` | `number` | `28` | Android pill corner radius (dp) |
 | `floating` | `boolean` | `true` | `true`: floating glass pill with blur. `false`: native Material 3 `BottomNavigationView` |
 | `floatingMargin` | `number` | `8` | Android floating margin (dp) |
-| `hapticFeedback` | `boolean` | `true` | iOS haptic feedback on tap |
+| `hapticFeedback` | `boolean` | `true` | Light haptic tick on tab press (iOS and Android) |
 | `labeled` | `boolean` | `true` | Show text labels |
-| `blurRadius` | `number` | `25` | Android blur radius (px, Android 13+; ignored below) |
+| `blurRadius` | `number` | `25` | Android blur radius (1–25, Android 13+; ignored below). `0` = no blur (flat bar, or a perfectly clear lens with liquid glass) |
+| `glassEffect` | `'blur' \| 'liquid'` | `'blur'` | Android glass look: frosted blur or iOS 26-style liquid glass (both Android 13+) |
+| `backgroundOpacity` | `number` | `47` / `19` | Android blur / liquid glass: how much of the tint covers the glass, in percent (0–100). Default 47 for blur, 19 for liquid |
+| `adaptiveIconColors` | `boolean` | `true` | Android: icons fade between dark and light depending on what shows through the glass |
 | `initialRouteName` | `string` | first tab | Initial active tab |
 | `translucent` | `boolean` | `true` | iOS liquid glass translucent |
 | `colorScheme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Force light/dark mode or follow system |
@@ -216,7 +247,7 @@ const createNativeIcon = (filled: string, outline: string) => {
 | `component` | `ComponentType` | Screen component |
 | `title` | `string` | Tab label |
 | `renderIcon` | `(props) => ReactNode \| PlatformIcons` | Simple render function or platform-specific object with `sfSymbol` (iOS 26+), `nativeIcon` (Android Material 3), and `render` (JS fallback) |
-| `role` | `'search'?` | iOS liquid glass search tab role |
+| `role` | `'search' \| 'prominent'` | iOS liquid glass tab role. `'search'`: the search tab, set apart as a round button on iOS 26 (inside the bar on iOS 27). `'prominent'`: set apart as a round button on iOS 27+ (react-native-bottom-tabs 1.5+), ignored before |
 | `badge` | `number \| string?` | Badge value |
 | `header` | `false \| HeaderConfig?` | Header configuration. `undefined` → default header, `false` → no header, `HeaderConfig` → custom header |
 | `accessibilityLabel` | `string?` | Accessibility label for the tab button (screen readers) |
@@ -392,19 +423,102 @@ Listen to tab navigation events per screen:
 />
 ```
 
+## Glass views
+
+The tab bar's glass is also available as plain views, for headers, chips, cards, floating buttons — anything:
+
+```tsx
+import { BlurView, LiquidGlassView } from 'react-native-glass-tabs';
+
+<BlurView style={{ borderRadius: 22, padding: 12 }}>
+  <Text>Frosted glass</Text>
+</BlurView>
+
+<LiquidGlassView style={{ borderRadius: 16, paddingHorizontal: 12, height: 32 }}>
+  <Icon name="location-sharp" size={14} color="#1C1C1E" />
+  <Text style={{ color: '#1C1C1E' }}>Dolomites, Italy</Text>
+</LiquidGlassView>
+```
+
+On Android, text and icons inside **adapt by themselves, natively**: over dark content they fade to white, and back to their own colour over light content (in dark mode, light text fades to near-black over light content). No props or state needed. On iOS the views use the system's own materials — `UIGlassEffect` liquid glass on iOS 26+, the frosted system materials before that and for `BlurView` — which handle light / dark by themselves.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `effect` (`GlassView` only) | `'blur' \| 'liquid'` | `'blur'` | `BlurView` = `'blur'`, `LiquidGlassView` = `'liquid'` |
+| `blurRadius` | `number` | `25` | Blur strength (1–25). Liquid glass uses a lighter blur; `0` = clear lens |
+| `tintColor` | `string` | white / `#1C1C1E` | Tint over the glass (hex) |
+| `backgroundOpacity` | `number` | `47` / `19` | Tint coverage in percent (0–100) |
+| `adaptiveContent` | `boolean` | `true` | Recolour text and icons inside to stay readable |
+| `colorScheme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Force light/dark or follow the system |
+| `onBackdropChange` | `(dark: boolean) => void` | — | Called when what shows through turns dark or light |
+
+`borderRadius` from `style` shapes the glass. On Android, live blur and liquid glass need Android 13+; older Android renders a translucent tinted view of the same shape, so layouts look right everywhere.
+
 ## How it works
 
 ### iOS 26+ (Liquid Glass)
-Uses `@bottom-tabs/react-navigation` which wraps SwiftUI's `TabView` with native liquid glass effects. SF Symbols are rendered natively. Each tab is wrapped in a `@react-navigation/native-stack` with transparent headers and native blur. The `search` role activates the native iOS search tab appearance.
+Uses `@bottom-tabs/react-navigation` which wraps SwiftUI's `TabView` with native liquid glass effects. SF Symbols are rendered natively. Each tab is wrapped in a `@react-navigation/native-stack` with transparent headers and native blur. The `search` role activates the native iOS search tab appearance (a separate round button on iOS 26); on iOS 27 that look comes from the `prominent` role.
 
 ### iOS 18 and below
 Uses `@react-navigation/bottom-tabs` with standard `UITabBarController` styling. Your `render` function is used for all icons. Headers use the built-in bottom-tabs header system. Dark mode adapts tab bar background, borders, and header text colors automatically.
 
 ### Android — Floating (`floating={true}`, default)
-A custom native Kotlin module applies `RenderEffect.createBlurEffect()` to the tab bar background (Android 13+), creating a GPU-accelerated frosted glass effect behind a floating pill-shaped bar. Falls back to a semi-transparent solid background with elevation shadow on Android 12 and below, where `android.graphics.RenderEffect` is either absent or not used. Each tab is wrapped in a `@react-navigation/native-stack` for consistent headers across all modes.
+A small native Kotlin view (no third-party blur library) draws a live, GPU-blurred copy of what's behind the bar:
+
+- **Nothing is redrawn in software.** Before each frame the bar records, into its own `RenderNode`, only the views behind it — through their existing display lists, so it's a handful of references, not a re-render of the screen.
+- **Only the strip under the bar**, at ¼ resolution, is blurred on the GPU with `RenderEffect`. While the screen scrolls, the backdrop refreshes at most ~30 times a second (a blur hides the difference), with a final refresh when motion stops.
+- **Liquid glass** (Android 13+) adds a small AGSL shader on the same node — edge refraction, a little extra colour — and a hairline light rim, at almost the same cost.
+- **Adaptive colours**: a 24×6 copy of the backdrop is measured a few times a second (one shared sampler for the whole app), to tell whether what shows through is dark or light; the whole bar then fades its icons together.
+- **Automatic quality**: a frame-time monitor lowers how often the backdrop is re-recorded while things move when the phone keeps dropping frames (30 → 15 per second → only once motion stops), and steps back up when frames are smooth again; battery saver uses the lowest level. (The GPU blur itself still follows the content behind it live.) Level changes are logged under the `GlassTabs` tag.
+- **Idle costs nothing**: work only happens on frames the app draws anyway; off-screen glass views do no work at all.
+- **Android 12 and below, low-RAM phones**: a flat translucent pill.
+
+Measured on an Android 15 emulator flinging a long list: the previous BlurView-based bar used ~56% CPU (main thread ~22%); this one uses ~36% (main thread ~6%), against ~25% for a flat bar. Stress-tested with thousands of random events on a 2-core low-RAM device, on Android 11 (flat bar) and on Android 13 with no crashes.
+
+Each tab is wrapped in a `@react-navigation/native-stack` for consistent headers across all modes.
 
 ### Android — Standard (`floating={false}`)
 Uses `@bottom-tabs/react-navigation` which wraps the native Material 3 `BottomNavigationView`. Icons are provided via `nativeIcon` with `filled` and `outline` image sources. Each tab is wrapped in a `@react-navigation/native-stack` for headers identical to floating mode. Falls back to `@react-navigation/bottom-tabs` if `@bottom-tabs/react-navigation` is not installed.
+
+## Breaking History
+
+### [1.1.0](https://github.com/louaySleman/react-native-glass-tabs/releases/tag/v1.1.0)
+
+**What's new**
+
+- **Liquid glass on Android** (Android 13+): set `glassEffect="liquid"` for an iOS 26-style glass tab bar on Android, with edge refraction, a light rim and a clear centre. Works with or without blur
+- **New Android glass engine**: no more BlurView or JitPack, about a third less CPU while scrolling
+- `<BlurView>`, `<LiquidGlassView>` and `<GlassView>` for glass anywhere, on Android and iOS
+- Icons and labels fade between dark and light with what's behind the glass (`adaptiveIconColors`)
+- Glass tint as a percentage with `backgroundOpacity`
+- Liquid selection pill that stretches between tabs
+- Haptics on Android tab press
+- Automatic quality: the glass refreshes less often on slow phones and in battery saver
+- `role: 'prominent'` sets a tab apart as a round button on iOS 27+
+- Expo config plugin
+
+**Breaking changes**
+
+- The iOS podspec moved to the package root, so run `pod install` after upgrading
+- Default inactive icon colours on Android now depend on the look (blur or liquid glass); set `inactiveColor` to keep your own
+
+**Fixes**
+
+- On iOS 18 and below the tab label showed the header title instead of the tab `title`
+
+### [1.0.1](https://github.com/louaySleman/react-native-glass-tabs/releases/tag/v1.0.1)
+
+**Breaking changes**
+
+- Android blur limited to Android 13+; older versions show a flat translucent bar
+
+**Fixes**
+
+- Fixed a launch crash on Android 12 and below
+
+### [1.0.0](https://github.com/louaySleman/react-native-glass-tabs/releases/tag/v1.0.0)
+
+First release.
 
 ## FAQ
 
@@ -418,7 +532,7 @@ Install `react-native-glass-tabs` and wrap your screens in a single `<GlassTabs>
 
 ### Does this work with Expo?
 
-Yes. The JavaScript-based navigators work out of the box with Expo. For the native Android blur effect (`GlassBarNativeView`), you need a development build (`expo prebuild`). The package gracefully falls back when native modules aren't available.
+Yes. Add `"plugins": ["react-native-glass-tabs"]` to your app config and use a development build (`expo prebuild` / EAS) for the native glass (the tab bar background, `BlurView` and `LiquidGlassView`). The JavaScript-based navigators work in Expo Go, and the package gracefully falls back when native modules aren't available.
 
 ### Does this support React Navigation 7?
 

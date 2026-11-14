@@ -90,14 +90,9 @@ repositories {
 
 def kotlin_version = getExtOrDefault("kotlinVersion")
 
-repositories {
-  maven { url 'https://jitpack.io' }
-}
-
 dependencies {
   implementation "com.facebook.react:react-android:+"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation "com.github.Dimezis:BlurView:version-2.0.5"
 }
 
 if (shouldApplyReactPlugin()) {

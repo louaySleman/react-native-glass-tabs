@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, Text, ScrollView, StatusBar, Switch, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StatusBar,
+  Switch,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../utils/theme';
 
@@ -18,6 +26,10 @@ export interface AppConfig {
   floating: boolean;
   labeled: boolean;
   hapticFeedback: boolean;
+  blur: boolean;
+  liquid: boolean;
+  /** Glass background opacity in percent (undefined = the look's default). */
+  glassOpacity?: number;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -25,6 +37,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   floating: true,
   labeled: true,
   hapticFeedback: true,
+  blur: true,
+  liquid: false,
 };
 
 // ─── Sub-components ───
@@ -33,7 +47,9 @@ const SectionHeader: React.FC<{ title: string }> = ({ title }) => {
   const theme = useTheme();
   return (
     <View style={s.sectionHeader}>
-      <Text style={[s.sectionTitle, { color: theme.colors.textSecondary }]}>{title}</Text>
+      <Text style={[s.sectionTitle, { color: theme.colors.textSecondary }]}>
+        {title}
+      </Text>
     </View>
   );
 };
@@ -50,12 +66,50 @@ const ToggleRow: React.FC<{
       <View style={s.rowLeft}>
         <Text style={[s.rowLabel, { color: theme.colors.text }]}>{label}</Text>
         {badge && (
-          <View style={[s.badge, badge === 'Android' ? s.badgeAndroid : s.badgeIos]}>
+          <View
+            style={[s.badge, badge === 'Android' ? s.badgeAndroid : s.badgeIos]}
+          >
             <Text style={s.badgeText}>{badge}</Text>
           </View>
         )}
       </View>
       <Switch value={value} onValueChange={onToggle} />
+    </View>
+  );
+};
+
+const StepperRow: React.FC<{
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}> = ({ label, value, onChange }) => {
+  const theme = useTheme();
+  const step = (d: number) => onChange(Math.max(0, Math.min(100, value + d)));
+  return (
+    <View style={[s.row, { borderBottomColor: theme.colors.border }]}>
+      <View style={s.rowLeft}>
+        <Text style={[s.rowLabel, { color: theme.colors.text }]}>{label}</Text>
+        <View style={[s.badge, s.badgeAndroid]}>
+          <Text style={s.badgeText}>Android</Text>
+        </View>
+      </View>
+      <View style={s.stepper}>
+        <TouchableOpacity
+          onPress={() => step(-10)}
+          style={[s.stepBtn, { backgroundColor: theme.colors.background }]}
+        >
+          <Text style={[s.stepText, { color: theme.colors.text }]}>−</Text>
+        </TouchableOpacity>
+        <Text style={[s.stepValue, { color: theme.colors.text }]}>
+          {value}%
+        </Text>
+        <TouchableOpacity
+          onPress={() => step(10)}
+          style={[s.stepBtn, { backgroundColor: theme.colors.background }]}
+        >
+          <Text style={[s.stepText, { color: theme.colors.text }]}>+</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -77,7 +131,10 @@ const ColorPickerRow: React.FC<{
             style={[
               s.colorDot,
               { backgroundColor: c.value },
-              selected === c.value && [s.colorDotSelected, { borderColor: theme.colors.text }],
+              selected === c.value && [
+                s.colorDotSelected,
+                { borderColor: theme.colors.text },
+              ],
             ]}
           />
         ))}
@@ -97,7 +154,8 @@ const ConfigScreen: React.FC<{
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       contentContainerStyle={[s.content, { paddingBottom: 140 }]}
-      contentInsetAdjustmentBehavior="automatic">
+      contentInsetAdjustmentBehavior="automatic"
+    >
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
 
       <SectionHeader title="Colors" />
@@ -111,13 +169,47 @@ const ConfigScreen: React.FC<{
 
       <SectionHeader title="Layout" />
       <View style={[s.card, { backgroundColor: theme.colors.card }]}>
-        <ToggleRow label="Floating" value={config.floating} onToggle={v => onUpdate({ floating: v })} badge="Android" />
-        <ToggleRow label="Labeled" value={config.labeled} onToggle={v => onUpdate({ labeled: v })} />
-        <ToggleRow label="Haptic Feedback" value={config.hapticFeedback} onToggle={v => onUpdate({ hapticFeedback: v })} badge="iOS" />
+        <ToggleRow
+          label="Floating"
+          value={config.floating}
+          onToggle={v => onUpdate({ floating: v })}
+          badge="Android"
+        />
+        <ToggleRow
+          label="Labeled"
+          value={config.labeled}
+          onToggle={v => onUpdate({ labeled: v })}
+        />
+        <ToggleRow
+          label="Haptic Feedback"
+          value={config.hapticFeedback}
+          onToggle={v => onUpdate({ hapticFeedback: v })}
+        />
+        <ToggleRow
+          label="Blur"
+          value={config.blur}
+          onToggle={v => onUpdate({ blur: v })}
+          badge="Android"
+        />
+        <ToggleRow
+          label="Liquid Glass"
+          value={config.liquid}
+          onToggle={v => onUpdate({ liquid: v })}
+          badge="Android"
+        />
+        <StepperRow
+          label="Glass Opacity"
+          value={config.glassOpacity ?? (config.liquid ? 19 : 47)}
+          onChange={v => onUpdate({ glassOpacity: v })}
+        />
       </View>
 
       <View style={s.infoBox}>
-        <Ionicons name="information-circle-outline" size={18} color={theme.colors.textSecondary} />
+        <Ionicons
+          name="information-circle-outline"
+          size={18}
+          color={theme.colors.textSecondary}
+        />
         <Text style={[s.infoText, { color: theme.colors.textSecondary }]}>
           Changes apply in real-time. Switch tabs to see the effect.
         </Text>
@@ -129,20 +221,57 @@ const ConfigScreen: React.FC<{
 const s = StyleSheet.create({
   content: { padding: 16 },
   sectionHeader: { marginTop: 24, marginBottom: 8, paddingHorizontal: 4 },
-  sectionTitle: { fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   card: { borderRadius: 12, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   rowLabel: { fontSize: 16 },
   badge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   badgeAndroid: { backgroundColor: '#E8F5E9' },
   badgeIos: { backgroundColor: '#E3F2FD' },
   badgeText: { fontSize: 10, fontWeight: '600', color: '#666' },
-  colorRow: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  colorRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   colorPicker: { flexDirection: 'row', gap: 10, marginTop: 10 },
   colorDot: { width: 32, height: 32, borderRadius: 16 },
   colorDotSelected: { borderWidth: 3 },
-  infoBox: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, paddingHorizontal: 4 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  stepBtn: {
+    width: 34,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepText: { fontSize: 18, fontWeight: '700' },
+  stepValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    minWidth: 42,
+    textAlign: 'center',
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 24,
+    paddingHorizontal: 4,
+  },
   infoText: { fontSize: 13, flex: 1 },
 });
 

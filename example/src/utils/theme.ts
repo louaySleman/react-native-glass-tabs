@@ -65,4 +65,13 @@ export const sharedStyles = StyleSheet.create({
   },
 });
 
-export const CARD_COLORS = ['#FF2D55', '#5856D6', '#FF9500', '#34C759', '#007AFF', '#AF52DE', '#FF3B30', '#5AC8FA'];
+export const CARD_COLORS = [
+  '#FF2D55',
+  '#5856D6',
+  '#FF9500',
+  '#34C759',
+  '#007AFF',
+  '#AF52DE',
+  '#FF3B30',
+  '#5AC8FA',
+];

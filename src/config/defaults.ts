@@ -10,6 +10,16 @@ export const DEFAULTS = {
   CORNER_RADIUS: 28,
   PRIMARY_COLOR: '#007AFF',
   INACTIVE_COLOR: '#8E8E93',
+  /** Inactive icons over the frosted (blur) glass. */
+  BLUR_INACTIVE: '#545458',
+  BLUR_INACTIVE_DARK: '#AEAEB2',
+  /** Inactive icons over liquid glass (nearly clear, so stronger contrast). */
+  LIQUID_INACTIVE: '#2C2C2E',
+  LIQUID_INACTIVE_DARK: '#F2F2F7',
+  /** Liquid glass selection: a neutral glass capsule (grey in light mode, white in dark). */
+  LIQUID_SELECTOR_LIGHT: '#8E8E93',
+  LIQUID_SELECTOR_ALPHA: 0.2,
+  LIQUID_SELECTOR_ALPHA_DARK: 0.16,
   BACKGROUND_COLOR: '#FFFFFF',
   OPACITY: 0.85,
   SELECTOR_ALPHA: 0.09,
@@ -20,6 +30,8 @@ export const DEFAULTS = {
   SELECTOR_SCALE_FROM: 0.6,
   SELECTOR_SCALE_TO: 1.0,
   SELECTOR_DURATION: 320,
+  /** Fade between dark and light icons when what's behind the glass changes. */
+  CONTRAST_FADE_DURATION: 280,
   BADGE_MAX: 99,
   BADGE_HEIGHT: 16,
   BADGE_MIN_WIDTH: 16,

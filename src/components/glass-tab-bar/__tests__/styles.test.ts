@@ -26,9 +26,10 @@ describe('GlassTabBar styles', () => {
     expect(styles.nativeGlass.bottom).toBe(0);
   });
 
-  it('selector has equal padding on all sides', () => {
-    expect(styles.selector.top).toBe(styles.selector.bottom);
-    expect(styles.selector.left).toBe(styles.selector.right);
+  it('selector is one absolutely placed pill, inset from the top (moved by the bar)', () => {
+    expect(styles.selector.position).toBe('absolute');
+    expect(styles.selector.top).toBe(6);
+    expect(styles.selector.left).toBe(0);
   });
 
   it('badge is positioned on icon', () => {

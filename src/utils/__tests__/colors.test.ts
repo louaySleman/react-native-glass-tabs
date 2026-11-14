@@ -47,3 +47,16 @@ describe('withAlpha', () => {
     expect(withAlpha('007AFF', 0.18)).toBe('#007AFF2e');
   });
 });
+
+describe('lighten', () => {
+  const { lighten } = require('../colors');
+  it('blends towards white', () => {
+    expect(lighten('#007AFF', 0)).toBe('#007aff');
+    expect(lighten('#000000', 0.5)).toBe('#808080');
+    expect(lighten('#000', 1)).toBe('#ffffff');
+  });
+  it('leaves non-hex colours alone', () => {
+    expect(lighten('red', 0.5)).toBe('red');
+    expect(lighten('rgb(0,0,0)', 0.5)).toBe('rgb(0,0,0)');
+  });
+});
