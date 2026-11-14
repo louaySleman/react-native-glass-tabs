@@ -486,8 +486,8 @@ Uses `@bottom-tabs/react-navigation` which wraps the native Material 3 `BottomNa
 
 **What's new**
 
-- Android glass engine rewritten: no more BlurView or JitPack, about a third less CPU while scrolling
-- Liquid glass on Android 13+ with `glassEffect="liquid"`
+- **Liquid glass on Android** (Android 13+): set `glassEffect="liquid"` for an iOS 26-style glass tab bar on Android, with edge refraction, a light rim and a clear centre. Works with or without blur
+- **New Android glass engine**: no more BlurView or JitPack, about a third less CPU while scrolling
 - `<BlurView>`, `<LiquidGlassView>` and `<GlassView>` for glass anywhere, on Android and iOS
 - Icons and labels fade between dark and light with what's behind the glass (`adaptiveIconColors`)
 - Glass tint as a percentage with `backgroundOpacity`
