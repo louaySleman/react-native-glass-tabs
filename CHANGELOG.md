@@ -11,7 +11,7 @@
 - **Automatic quality**: the glass watches frame times and, on phones that keep dropping frames (over 25 ms), re-records its backdrop less often while scrolling, down to only once motion stops; battery saver does the same. Level changes are logged under the `GlassTabs` tag.
 - **iOS glass views**: `BlurView` / `LiquidGlassView` use the system materials on iOS, with real `UIGlassEffect` liquid glass on iOS 26+.
 - **Expo config plugin**: `"plugins": ["react-native-glass-tabs"]` sets the Material 3 theme.
-- **CI** builds the example app for Android and iOS.
+- **CI** builds and packs the package after lint, tests and type checks, and uploads the tarball.
 - **Haptics on Android**: `hapticFeedback` now ticks on tab press on Android too, and is passed to the Material 3 bar.
 - Inactive icon colours now default per look for contrast on the glass. The liquid glass selection is a neutral glass capsule.
 - Android 12 and below and low-RAM phones keep the flat translucent bar (never a crash), as in 1.0.1.
