@@ -15,6 +15,9 @@
 - **Haptics on Android**: `hapticFeedback` now ticks on tab press on Android too, and is passed to the Material 3 bar.
 - Inactive icon colours now default per look for contrast on the glass. The liquid glass selection is a neutral glass capsule.
 - Android 12 and below and low-RAM phones keep the flat translucent bar (never a crash), as in 1.0.1.
+- **`role: 'prominent'`** (iOS 27+, react-native-bottom-tabs 1.5+): sets a tab apart as a round button at the end of the bar. iOS 27 keeps `role: 'search'` inside the bar.
+- **Breaking:** the iOS podspec moved to the package root so autolinking finds it; run `pod install` after upgrading.
+- Fixed: on iOS 18 and below the tab label showed the header title instead of the tab's `title`.
 - The example app is redesigned around real photos (from Unsplash), with new icons and the glass views.
 
 ## 1.0.1

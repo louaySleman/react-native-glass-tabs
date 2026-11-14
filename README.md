@@ -480,6 +480,31 @@ Each tab is wrapped in a `@react-navigation/native-stack` for consistent headers
 ### Android — Standard (`floating={false}`)
 Uses `@bottom-tabs/react-navigation` which wraps the native Material 3 `BottomNavigationView`. Icons are provided via `nativeIcon` with `filled` and `outline` image sources. Each tab is wrapped in a `@react-navigation/native-stack` for headers identical to floating mode. Falls back to `@react-navigation/bottom-tabs` if `@bottom-tabs/react-navigation` is not installed.
 
+## Breaking History
+
+### [1.1.0](https://github.com/louaySleman/react-native-glass-tabs/releases/tag/v1.1.0)
+
+- Android glass engine rewritten: no more BlurView or JitPack, about a third less CPU while scrolling
+- Liquid glass on Android 13+ with `glassEffect="liquid"`
+- `<BlurView>`, `<LiquidGlassView>` and `<GlassView>` for glass anywhere, on Android and iOS
+- Icons and labels fade between dark and light with what's behind the glass (`adaptiveIconColors`)
+- Glass tint as a percentage with `backgroundOpacity`
+- Liquid selection pill, haptics on Android, and automatic quality on slow phones and in battery saver
+- `role: 'prominent'` sets a tab apart as a round button on iOS 27+
+- Expo config plugin
+- **Breaking:** the iOS podspec moved to the package root, so run `pod install` after upgrading
+- **Breaking:** default inactive icon colours on Android now depend on the look (blur or liquid glass); set `inactiveColor` to keep your own
+- Fixed: on iOS 18 and below the tab label showed the header title instead of the tab `title`
+
+### [1.0.1](https://github.com/louaySleman/react-native-glass-tabs/releases/tag/v1.0.1)
+
+- Fixed a launch crash on Android 12 and below
+- Android blur limited to Android 13+; older versions show a flat translucent bar
+
+### [1.0.0](https://github.com/louaySleman/react-native-glass-tabs/releases/tag/v1.0.0)
+
+First release.
+
 ## FAQ
 
 ### How do I add liquid glass tabs to my React Native app?
