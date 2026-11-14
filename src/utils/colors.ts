@@ -42,3 +42,30 @@ export const withAlpha = (hex: string, alpha: number): string => {
   const cleanBase = base.length === 9 ? base.substring(0, 7) : base;
   return `${cleanBase}${alphaHex}`;
 };
+
+/**
+ * Blends a hex colour towards white (amount 0 = unchanged, 1 = white). Non-hex colours (e.g.
+ * 'rgb(...)', named colours) are returned unchanged.
+ *
+ * @param hex - Color in '#RGB' or '#RRGGBB' format
+ * @param amount - How much white to mix in, 0 to 1
+ * @returns '#RRGGBB' color string
+ */
+export const lighten = (hex: string, amount: number): string => {
+  const cleaned = hex.replace('#', '');
+  if (!/^([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(cleaned)) return hex;
+  const full =
+    cleaned.length === 3
+      ? cleaned
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : cleaned.substring(0, 6);
+  const mix = (i: number) => {
+    const v = parseInt(full.substring(i, i + 2), 16);
+    return Math.round(v + (255 - v) * amount)
+      .toString(16)
+      .padStart(2, '0');
+  };
+  return `#${mix(0)}${mix(2)}${mix(4)}`;
+};

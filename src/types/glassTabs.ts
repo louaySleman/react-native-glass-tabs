@@ -191,7 +191,14 @@ export interface TabConfig {
   component: React.ComponentType<any>;
   title: string;
   renderIcon: ((props: IconRenderProps) => React.ReactNode) | PlatformIcons;
-  role?: 'search';
+  /**
+   * iOS liquid glass tab role.
+   * - `'search'`: the search tab. On iOS 26 it sits apart as a round button at the end of the bar;
+   *   on iOS 27 it stays inside the bar.
+   * - `'prominent'`: iOS 27+ (react-native-bottom-tabs 1.5+): the tab sits apart as a round button
+   *   at the end of the bar. Ignored on older iOS.
+   */
+  role?: 'search' | 'prominent';
   badge?: number | string;
   /**
    * Header configuration.
@@ -229,12 +236,29 @@ export interface GlassTabsProps {
   floating?: boolean;
   /** Android floating margin (dp). Android floating only. */
   floatingMargin?: number;
-  /** Enable haptic feedback on tab press. iOS only. */
+  /** Light haptic tick on tab press (iOS and Android). Default: true. */
   hapticFeedback?: boolean;
   /** Show text labels under icons. */
   labeled?: boolean;
-  /** Android blur radius (px, API 31+). Android floating only. */
+  /** Android blur radius (px, Android 13+; ignored below). Android floating only. */
   blurRadius?: number;
+  /**
+   * Android glass look. `'blur'` (default): frosted glass, Android 13+.
+   * `'liquid'`: iOS 26-style liquid glass — lighter blur, edges that bend what's behind them and
+   * a light rim, Android 13+. Android floating only.
+   */
+  glassEffect?: 'blur' | 'liquid';
+  /**
+   * Android glass: switch the icons between dark and light depending on what shows through
+   * the bar (light icons over dark photos, dark icons over light pages), like iOS. Only when
+   * `inactiveColor` isn't set for the inactive icons. Default: true.
+   */
+  adaptiveIconColors?: boolean;
+  /**
+   * Android blur / liquid glass: how much of the tint covers the glass, in percent (0–100).
+   * Default 47 for blur, 19 for liquid glass. Lower shows more of what's behind.
+   */
+  backgroundOpacity?: number;
   /** Initial active tab name. */
   initialRouteName?: string;
   /** Tab bar translucency. iOS only. */

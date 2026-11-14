@@ -27,9 +27,9 @@ cp -r "$ROOT_DIR/android/src" "$ROOT_DIR/$DIST_DIR/android/src"
 
 # Copy ios native code
 mkdir -p "$ROOT_DIR/$DIST_DIR/ios"
-cp "$ROOT_DIR/ios/GlassTabs.podspec" "$ROOT_DIR/$DIST_DIR/ios/"
-cp "$ROOT_DIR/ios/GlassTabs.h" "$ROOT_DIR/$DIST_DIR/ios/"
-cp "$ROOT_DIR/ios/GlassTabs.mm" "$ROOT_DIR/$DIST_DIR/ios/"
+# The podspec sits at the package root (where autolinking looks for it).
+cp "$ROOT_DIR/GlassTabs.podspec" "$ROOT_DIR/$DIST_DIR/"
+cp "$ROOT_DIR"/ios/* "$ROOT_DIR/$DIST_DIR/ios/"
 
 # Copy src (Metro resolves this at runtime + codegen needs it)
 cp -r "$ROOT_DIR/src" "$ROOT_DIR/$DIST_DIR/src"
@@ -37,6 +37,11 @@ for tests_dir in "$ROOT_DIR/$DIST_DIR/src"/*/__tests__; do
   [ -d "$tests_dir" ] && rm -rf "$tests_dir"
 done
 rm -rf "$ROOT_DIR/$DIST_DIR/src/__tests__"
+
+# Expo config plugin
+cp "$ROOT_DIR/app.plugin.js" "$ROOT_DIR/$DIST_DIR/"
+mkdir -p "$ROOT_DIR/$DIST_DIR/plugin"
+cp "$ROOT_DIR/plugin/withGlassTabs.js" "$ROOT_DIR/$DIST_DIR/plugin/"
 
 # Copy package files
 cp "$ROOT_DIR/package.json" "$ROOT_DIR/$DIST_DIR/"

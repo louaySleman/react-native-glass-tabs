@@ -13,6 +13,7 @@ class GlassTabsPackage : ReactPackage {
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
     return listOf(
       GlassBarViewManager(),
+      GlassViewManager(),
       GlassFadeViewManager()
     )
   }

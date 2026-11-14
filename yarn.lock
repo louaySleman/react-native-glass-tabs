@@ -10185,12 +10185,15 @@ __metadata:
   peerDependencies:
     "@react-navigation/bottom-tabs": ">=7.0.0"
     "@react-navigation/native": ">=7.0.0"
+    expo: "*"
     react: "*"
     react-native: ">=0.76.0"
   peerDependenciesMeta:
     "@bottom-tabs/react-navigation":
       optional: true
     "@react-navigation/native-stack":
+      optional: true
+    expo:
       optional: true
   languageName: unknown
   linkType: soft
